@@ -1,0 +1,17 @@
+--- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/drivers/net/wireless/ath/ath9k/gpio.c	2026-05-17 16:16:34.000000000 +0100
++++ /home/gorilla/kernel-build-workspace/linux-7.0.9/drivers/net/wireless/ath/ath9k/gpio.c	2026-05-20 13:43:48.506824762 +0100
+@@ -219,12 +219,12 @@
+ 	if (!(ah->caps.hw_caps & ATH9K_HW_CAP_MCI))
+ 		ath_detect_bt_priority(sc);
+ 
+-	stomp_type = btcoex->bt_stomp_type;
++	stomp_type = ATH_BTCOEX_STOMP_NONE; /* GORILLA: Wi-Fi is the BOSS. Never yield to BT. */
+ 	timer_period = btcoex->btcoex_no_stomp;
+ 
+ 	if (!(ah->caps.hw_caps & ATH9K_HW_CAP_MCI)) {
+ 		if (test_bit(BT_OP_SCAN, &btcoex->op_flags)) {
+-			stomp_type = ATH_BTCOEX_STOMP_ALL;
++			stomp_type = ATH_BTCOEX_STOMP_NONE; /* GORILLA: Even during scan, Wi-Fi rules */
+ 			timer_period = btcoex->btscan_no_stomp;
+ 		}
+ 	} else if (btcoex->stomp_audio >= 5) {

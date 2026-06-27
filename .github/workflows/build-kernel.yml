@@ -1,0 +1,51 @@
+name: Build Gorilla Unleashed Kernel 7.1.2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential bc kmod cpio bison flex libelf-dev libssl-dev libncurses-dev rsync debhelper git wget
+
+      - name: Fetch Upstream Kernel 7.1.2
+        run: |
+          wget https://cdn.kernel.org/pub/scm/linux/kernel/v7.x/linux-7.1.2.tar.xz
+          tar -xf linux-7.1.2.tar.xz
+
+      - name: Apply Patches and Install Files
+        run: |
+          python3 universal_freedom_installer.py ./linux-7.1.2
+
+      - name: Inject Configurations
+        run: |
+          cp kernel.config ./linux-7.1.2/.config
+          python3 config_injector.py ./linux-7.1.2
+          make -C ./linux-7.1.2 olddefconfig
+
+      - name: Compile Kernel Packages
+        run: |
+          export KCFLAGS="-O3 -pipe"
+          make -C ./linux-7.1.2 -j$(nproc) bindeb-pkg KDEB_PKGVERSION="7.1.2"
+
+      - name: Create Release and Upload Artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v7.1.2-unleashed
+          name: Gorilla Unleashed Kernel v7.1.2
+          body: |
+            Optimized custom Linux Kernel 7.1.2 with BBR, dynamic preemption, Realtek audio overrides, and regulatory Wi-Fi unlocks.
+          files: |
+            ./linux-image-*.deb
+            ./linux-headers-*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

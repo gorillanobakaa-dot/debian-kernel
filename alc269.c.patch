@@ -1,0 +1,63 @@
+--- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/sound/hda/codecs/realtek/alc269.c	2026-05-17 16:16:34.000000000 +0100
++++ /home/gorilla/kernel-build-workspace/linux-7.0.9/sound/hda/codecs/realtek/alc269.c	2026-05-20 13:43:48.506433079 +0100
+@@ -4138,6 +4138,7 @@
+ 	ALC245_FIXUP_ACER_MICMUTE_LED,
+ 	ALC245_FIXUP_CS35L41_I2C_2_MUTE_LED,
+ 	ALC236_FIXUP_HP_DMIC,
++	ALC269_FIXUP_KING_KONG,
+ };
+ 
+ /* A special fixup for Lenovo C940 and Yoga Duet 7;
+@@ -4174,12 +4175,38 @@
+ 	__snd_hda_apply_fixup(codec, id, action, 0);
+ }
+ 
++
++static void alc269_fixup_king_kong(struct hda_codec *codec,
++                                  const struct hda_fixup *fix, int action)
++{
++        u32 caps;
++        if (action != HDA_FIXUP_ACT_PRE_PROBE)
++                return;
++        static hda_nid_t nids[] = { 0x14, 0x21 };
++        int i;
++        for (i = 0; i < 2; i++) {
++                caps = query_amp_caps(codec, nids[i], HDA_OUTPUT);
++                if (caps) {
++                        caps &= ~AC_AMPCAP_OFFSET;
++                        caps |= (0x04 << AC_AMPCAP_OFFSET_SHIFT);
++                        snd_hda_override_amp_caps(codec, nids[i], HDA_OUTPUT, caps);
++                }
++        }
++        codec_info(codec, "ALC269: KING KONG ROAR (+60dB) unleashed!\n");
++}
++
+ static const struct hda_fixup alc269_fixups[] = {
+-	[ALC269_FIXUP_GPIO2] = {
+-		.type = HDA_FIXUP_FUNC,
+-		.v.func = alc_fixup_gpio2,
+-	},
+-	[ALC269_FIXUP_SONY_VAIO] = {
++        [ALC269_FIXUP_GPIO2] = {
++                .type = HDA_FIXUP_FUNC,
++                .v.func = alc_fixup_gpio2,
++        },
++                [ALC269_FIXUP_KING_KONG] = {
++                .type = HDA_FIXUP_FUNC,
++                .v.func = alc269_fixup_king_kong,
++                .chained = true,
++                .chain_id = ALC269_FIXUP_SONY_VAIO
++        },
++        [ALC269_FIXUP_SONY_VAIO] = {
+ 		.type = HDA_FIXUP_PINCTLS,
+ 		.v.pins = (const struct hda_pintbl[]) {
+ 			{0x19, PIN_VREFGRD},
+@@ -7853,7 +7880,7 @@
+ static const struct hda_quirk alc269_fixup_vendor_tbl[] = {
+ 	SND_PCI_QUIRK_VENDOR(0x1025, "Acer Aspire", ALC271_FIXUP_DMIC),
+ 	SND_PCI_QUIRK_VENDOR(0x103c, "HP", ALC269_FIXUP_HP_MUTE_LED),
+-	SND_PCI_QUIRK_VENDOR(0x104d, "Sony VAIO", ALC269_FIXUP_SONY_VAIO),
++	SND_PCI_QUIRK_VENDOR(0x104d, "Sony VAIO", ALC269_FIXUP_KING_KONG),
+ 	SND_PCI_QUIRK_VENDOR(0x17aa, "Lenovo XPAD", ALC269_FIXUP_LENOVO_XPAD_ACPI),
+ 	SND_PCI_QUIRK_VENDOR(0x19e5, "Huawei Matebook", ALC255_FIXUP_MIC_MUTE_LED),
+ 	{}

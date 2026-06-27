@@ -1,0 +1,188 @@
+--- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/net/wireless/reg.c	2026-05-17 16:16:34.000000000 +0100
++++ /home/gorilla/kernel-build-workspace/linux-7.0.9/net/wireless/reg.c	2026-05-21 12:25:10.873351222 +0100
+@@ -1568,43 +1568,43 @@
+ {
+ 	u32 channel_flags = 0;
+ 	if (rd_flags & NL80211_RRF_NO_IR_ALL)
+-		channel_flags |= IEEE80211_CHAN_NO_IR;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_DFS)
+-		channel_flags |= IEEE80211_CHAN_RADAR;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_OFDM)
+-		channel_flags |= IEEE80211_CHAN_NO_OFDM;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_OUTDOOR)
+-		channel_flags |= IEEE80211_CHAN_INDOOR_ONLY;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_IR_CONCURRENT)
+ 		channel_flags |= IEEE80211_CHAN_IR_CONCURRENT;
+ 	if (rd_flags & NL80211_RRF_NO_HT40MINUS)
+-		channel_flags |= IEEE80211_CHAN_NO_HT40MINUS;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_HT40PLUS)
+-		channel_flags |= IEEE80211_CHAN_NO_HT40PLUS;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_80MHZ)
+-		channel_flags |= IEEE80211_CHAN_NO_80MHZ;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_160MHZ)
+-		channel_flags |= IEEE80211_CHAN_NO_160MHZ;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_HE)
+-		channel_flags |= IEEE80211_CHAN_NO_HE;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_320MHZ)
+-		channel_flags |= IEEE80211_CHAN_NO_320MHZ;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_EHT)
+-		channel_flags |= IEEE80211_CHAN_NO_EHT;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_DFS_CONCURRENT)
+ 		channel_flags |= IEEE80211_CHAN_DFS_CONCURRENT;
+ 	if (rd_flags & NL80211_RRF_NO_6GHZ_VLP_CLIENT)
+-		channel_flags |= IEEE80211_CHAN_NO_6GHZ_VLP_CLIENT;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_6GHZ_AFC_CLIENT)
+-		channel_flags |= IEEE80211_CHAN_NO_6GHZ_AFC_CLIENT;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_PSD)
+-		channel_flags |= IEEE80211_CHAN_PSD;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_ALLOW_6GHZ_VLP_AP)
+ 		channel_flags |= IEEE80211_CHAN_ALLOW_6GHZ_VLP_AP;
+ 	if (rd_flags & NL80211_RRF_ALLOW_20MHZ_ACTIVITY)
+ 		channel_flags |= IEEE80211_CHAN_ALLOW_20MHZ_ACTIVITY;
+ 	if (rd_flags & NL80211_RRF_NO_UHR)
+-		channel_flags |= IEEE80211_CHAN_NO_UHR;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	return channel_flags;
+ }
+ 
+@@ -1775,7 +1775,7 @@
+ 		chan->max_reg_power = chan->max_power = chan->orig_mpwr =
+ 			(int) MBM_TO_DBM(power_rule->max_eirp);
+ 
+-		if (chan->flags & IEEE80211_CHAN_RADAR) {
++		if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 			chan->dfs_cac_ms = IEEE80211_DFS_MIN_CAC_TIME_MS;
+ 			if (reg_rule->dfs_cac_ms)
+ 				chan->dfs_cac_ms = reg_rule->dfs_cac_ms;
+@@ -1797,7 +1797,7 @@
+ 		      MBI_TO_DBI(power_rule->max_antenna_gain));
+ 	chan->max_reg_power = (int) MBM_TO_DBM(power_rule->max_eirp);
+ 
+-	if (chan->flags & IEEE80211_CHAN_RADAR) {
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 		if (reg_rule->dfs_cac_ms)
+ 			chan->dfs_cac_ms = reg_rule->dfs_cac_ms;
+ 		else
+@@ -1868,7 +1868,7 @@
+ 		chan->max_power = chan->max_reg_power;
+ 		chan->orig_mpwr = chan->max_reg_power;
+ 
+-		if (chan->flags & IEEE80211_CHAN_RADAR) {
++		if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 			chan->dfs_cac_ms = IEEE80211_DFS_MIN_CAC_TIME_MS;
+ 			if (rrule1->dfs_cac_ms || rrule2->dfs_cac_ms)
+ 				chan->dfs_cac_ms = max_t(unsigned int,
+@@ -1914,7 +1914,7 @@
+ 				    MBM_TO_DBM(power_rule1->max_eirp),
+ 				    MBM_TO_DBM(power_rule2->max_eirp));
+ 
+-	if (chan->flags & IEEE80211_CHAN_RADAR) {
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 		if (rrule1->dfs_cac_ms || rrule2->dfs_cac_ms)
+ 			chan->dfs_cac_ms = max_t(unsigned int,
+ 						 rrule1->dfs_cac_ms,
+@@ -2012,12 +2012,12 @@
+ 		    request_wiphy->regulatory_flags & REGULATORY_STRICT_REG) {
+ 			pr_debug("Disabling freq %d.%03d MHz for good\n",
+ 				 chan->center_freq, chan->freq_offset);
+-			chan->orig_flags |= IEEE80211_CHAN_DISABLED;
++			chan->orig_flags |= 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */;
+ 			chan->flags = chan->orig_flags;
+ 		} else {
+ 			pr_debug("Disabling freq %d.%03d MHz\n",
+ 				 chan->center_freq, chan->freq_offset);
+-			chan->flags |= IEEE80211_CHAN_DISABLED;
++			chan->flags |= 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */;
+ 		}
+ 		return;
+ 	}
+@@ -2184,8 +2184,8 @@
+ 
+ 	chan_before = *chan;
+ 
+-	if (chan->flags & IEEE80211_CHAN_NO_IR) {
+-		chan->flags &= ~IEEE80211_CHAN_NO_IR;
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: NO_IR stripped */) {
++		chan->flags &= ~0 /* GORILLA_UNLEASHED: NO_IR stripped */;
+ 		channel_changed = true;
+ 	}
+ 
+@@ -2249,7 +2249,7 @@
+ {
+ 	if (!chan)
+ 		return false;
+-	if (chan->flags & IEEE80211_CHAN_DISABLED)
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */)
+ 		return false;
+ 	/* This would happen when regulatory rules disallow HT40 completely */
+ 	if ((chan->flags & IEEE80211_CHAN_NO_HT40) == IEEE80211_CHAN_NO_HT40)
+@@ -2430,7 +2430,7 @@
+ 		case NL80211_IFTYPE_STATION:
+ 		case NL80211_IFTYPE_P2P_CLIENT:
+ 			ret = cfg80211_chandef_usable(wiphy, &chandef,
+-						      IEEE80211_CHAN_DISABLED);
++						      0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */);
+ 			if (!ret)
+ 				return ret;
+ 			break;
+@@ -2544,9 +2544,9 @@
+ 		pr_debug("Disabling freq %d.%03d MHz as custom regd has no rule that fits it\n",
+ 			 chan->center_freq, chan->freq_offset);
+ 		if (wiphy->regulatory_flags & REGULATORY_WIPHY_SELF_MANAGED) {
+-			chan->flags |= IEEE80211_CHAN_DISABLED;
++			chan->flags |= 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */;
+ 		} else {
+-			chan->orig_flags |= IEEE80211_CHAN_DISABLED;
++			chan->orig_flags |= 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */;
+ 			chan->flags = chan->orig_flags;
+ 		}
+ 		return;
+@@ -2570,7 +2570,7 @@
+ 	chan->max_reg_power = chan->max_power =
+ 		(int) MBM_TO_DBM(power_rule->max_eirp);
+ 
+-	if (chan->flags & IEEE80211_CHAN_RADAR) {
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 		if (reg_rule->dfs_cac_ms)
+ 			chan->dfs_cac_ms = reg_rule->dfs_cac_ms;
+ 		else
+@@ -2951,12 +2951,12 @@
+ static void reg_copy_dfs_chan_state(struct ieee80211_channel *dst_chan,
+ 				    struct ieee80211_channel *src_chan)
+ {
+-	if (!(dst_chan->flags & IEEE80211_CHAN_RADAR) ||
+-	    !(src_chan->flags & IEEE80211_CHAN_RADAR))
++	if (!(dst_chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) ||
++	    !(src_chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */))
+ 		return;
+ 
+-	if (dst_chan->flags & IEEE80211_CHAN_DISABLED ||
+-	    src_chan->flags & IEEE80211_CHAN_DISABLED)
++	if (dst_chan->flags & 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */ ||
++	    src_chan->flags & 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */)
+ 		return;
+ 
+ 	if (src_chan->center_freq == dst_chan->center_freq &&
+@@ -3652,7 +3652,7 @@
+ 	bool processing;
+ 
+ 	if (beacon_chan->beacon_found ||
+-	    beacon_chan->flags & IEEE80211_CHAN_RADAR ||
++	    beacon_chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */ ||
+ 	    (beacon_chan->band == NL80211_BAND_2GHZ &&
+ 	     !freq_is_chan_12_13_14(beacon_chan->center_freq)))
+ 		return;

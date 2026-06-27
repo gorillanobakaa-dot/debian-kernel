@@ -1,0 +1,11 @@
+# GORILLA UNLEASHED KERNEL 7.1.2 — PATCH REGISTRY MAP
+# Format: <filename> -> <destination_relative_path>
+
+reg.c -> net/wireless/reg.c
+hw.c -> drivers/net/wireless/ath/ath9k/hw.c
+init.c -> drivers/net/wireless/ath/ath9k/init.c
+gpio.c -> drivers/net/wireless/ath/ath9k/gpio.c
+btcoex.c -> drivers/net/wireless/ath/ath9k/btcoex.c
+tcp.c -> net/ipv4/tcp.c
+tcp.h -> include/net/tcp.h
+alc269.c -> sound/hda/codecs/realtek/alc269.c

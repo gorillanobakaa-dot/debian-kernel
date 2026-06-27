@@ -1,0 +1,11 @@
+# Gorilla Unleashed Git Ignore
+*.deb
+*.tar.xz
+*.log
+*.orig_backup
+*.orig
+*.rej
+*~
+.DS_Store
+.idea/
+.vscode/

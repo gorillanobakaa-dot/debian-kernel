@@ -1,0 +1,31 @@
+--- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/net/ipv4/tcp.c	2026-05-17 16:16:34.000000000 +0100
++++ /home/gorilla/kernel-build-workspace/linux-7.0.9/net/ipv4/tcp.c	2026-05-21 19:07:20.464945904 +0100
+@@ -464,7 +464,7 @@
+ 	 * initialization of these values.
+ 	 */
+ 	tp->snd_ssthresh = TCP_INFINITE_SSTHRESH;
+-	tp->snd_cwnd_clamp = ~0;
++	tp->snd_cwnd_clamp = 65535;
+ 	tp->mss_cache = TCP_MSS_DEFAULT;
+ 
+ 	tp->reordering = READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_reordering);
+@@ -5344,13 +5344,12 @@
+ 	max_wshare = min(4UL*1024*1024, limit);
+ 	max_rshare = min(32UL*1024*1024, limit);
+ 
+-	init_net.ipv4.sysctl_tcp_wmem[0] = PAGE_SIZE;
+-	init_net.ipv4.sysctl_tcp_wmem[1] = 16*1024;
+-	init_net.ipv4.sysctl_tcp_wmem[2] = max(64*1024, max_wshare);
+-
+-	init_net.ipv4.sysctl_tcp_rmem[0] = PAGE_SIZE;
+-	init_net.ipv4.sysctl_tcp_rmem[1] = 131072;
+-	init_net.ipv4.sysctl_tcp_rmem[2] = max(131072, max_rshare);
++	init_net.ipv4.sysctl_tcp_wmem[0] = 4096;
++	init_net.ipv4.sysctl_tcp_wmem[1] = 16777216; /* GORILLA: UNLEASHED - 16MB Default Write Buffer */
++	init_net.ipv4.sysctl_tcp_wmem[2] = 67108864; /* GORILLA: UNLEASHED - 64MB Max Write Buffer */
++	init_net.ipv4.sysctl_tcp_rmem[0] = 4096;
++	init_net.ipv4.sysctl_tcp_rmem[1] = 16777216; /* GORILLA: UNLEASHED - 16MB Default Read Buffer */
++	init_net.ipv4.sysctl_tcp_rmem[2] = 67108864; /* GORILLA: UNLEASHED - 64MB Max Read Buffer */
+ 
+ 	pr_info("Hash tables configured (established %u bind %u)\n",
+ 		tcp_hashinfo.ehash_mask + 1, tcp_hashinfo.bhash_size);
