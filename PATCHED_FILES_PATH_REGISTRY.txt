@@ -8,7 +8,6 @@ gpio.c -> drivers/net/wireless/ath/ath9k/gpio.c
 btcoex.c -> drivers/net/wireless/ath/ath9k/btcoex.c
 tcp.c -> net/ipv4/tcp.c
 tcp.h -> include/net/tcp.h
-alc269.c -> sound/hda/codecs/realtek/alc269.c
 sony-laptop.c -> drivers/platform/x86/sony-laptop.c
 intel_display_params.h -> drivers/gpu/drm/i915/display/intel_display_params.h
 thinkpad_acpi.c -> drivers/platform/x86/lenovo/thinkpad_acpi.c

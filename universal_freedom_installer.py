@@ -41,7 +41,10 @@ def main():
         "init.c": "drivers/net/wireless/ath/ath9k/init.c",
         "gpio.c": "drivers/net/wireless/ath/ath9k/gpio.c",
         "btcoex.c": "drivers/net/wireless/ath/ath9k/btcoex.c",
-        "alc269.c": "sound/hda/codecs/realtek/alc269.c"
+        "sony-laptop.c": "drivers/platform/x86/sony-laptop.c",
+        "intel_display_params.h": "drivers/gpu/drm/i915/display/intel_display_params.h",
+        "thinkpad_acpi.c": "drivers/platform/x86/lenovo/thinkpad_acpi.c",
+        "dell-pc.c": "drivers/platform/x86/dell/dell-pc.c"
     }
     
     parsed = parse_registry(registry_path)

@@ -51,13 +51,11 @@ We began our optimization journey on Kernel 7.0.9 and have successfully ported a
 
 ### 1. Cohesive Tweak Catalog
 
-This kernel applies a total of **12 modified file targets** with a strict set of custom enhancements:
+This kernel applies a total of **11 modified file targets** with a strict set of custom enhancements:
 
-#### 1. Audio Driver: [sound/hda/codecs/realtek/alc269.c](file:///sound/hda/codecs/realtek/alc269.c) (4 Tweaks)
-*   **Enum Injection**: Injects `ALC269_FIXUP_KING_KONG` flag.
-*   **Amp Override Function**: Implements `alc269_fixup_king_kong()` to query default capabilities using `query_amp_caps()` and overwrite the output offset register to `0x04` on Speaker (NID `0x14`) and Headphone (Pin NID `0x21`) pins.
-*   **Error Checking**: Validates `snd_hda_override_amp_caps` return status with `codec_warn` logging on failure.
-*   **Quirk Redirection**: Reroutes PCI vendor quirk `0x104d` (Sony VAIO) to the new King Kong fixup structure.
+#### 1. Audio Driver: [sound/hda/codecs/realtek/alc269.c](file:///sound/hda/codecs/realtek/alc269.c) (Clean / Reverted to Pristine)
+*   **Architectural Change**: Reverted to clean upstream status. We removed the legacy hardcoded $+60\text{ dB}$ gain table hack to avoid speaker blowout and chassis buzzing.
+*   **EAPD Power Fix**: Unlocking motherboard speaker output is instead achieved cleanly by configuring `CONFIG_SND_HDA_PATCH_LOADER=y` to force-power the physical motherboard amplifier (EAPD pin) on boot, paired with Firefox's software compand DSP.
 
 #### 2. Wireless Regulatory Engine: [net/wireless/reg.c](file:///net/wireless/reg.c) (21 Tweaks)
 *   **Flag Stripping (13 Tweaks)**: Disables regulatory flags by ORing with `0` instead of the restriction flags inside `map_regdom_flags()` (bypasses `NO_IR`, `DFS`, `INDOOR_ONLY`, `NO_HT40`, `NO_80MHZ`, `NO_160MHZ`, `NO_320MHZ`, `NO_HE`, `NO_EHT`, `PSD`, etc.).
