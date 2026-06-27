@@ -41,6 +41,9 @@ We began our optimization journey on Kernel 7.0.9 and have successfully ported a
 7.  **Smooth Display & Low-Latency Rendering (Wayland Optimization)**:
     *   *The Problem*: Screen refreshes and page flips have minor sync delays, causing visual lag and tearing.
     *   *The Fix*: We enabled **Frame Buffer Compression** to save memory speed, and force-enabled **Nuclear Pageflip** so Wayland renders display updates in a single atomic sweep, making animations feel buttery smooth.
+8.  **Forced High-Performance Mode for Lenovo & Dell Laptops (Universal Power Optimization)**:
+    *   *The Problem*: Lenovo and Dell systems default to a "balanced" profile that throttles CPU speeds aggressively under heavy tasks to control fan noise.
+    *   *The Fix*: We reprogrammed the drivers to automatically select the **Performance thermal profile** at boot. This tells the Embedded Controller to unlock maximum CPU power limits (PL1/PL2 thresholds) and spin the fans proactively, preventing early thermal throttling.
 
 ---
 
@@ -48,7 +51,7 @@ We began our optimization journey on Kernel 7.0.9 and have successfully ported a
 
 ### 1. Cohesive Tweak Catalog
 
-This kernel applies a total of **10 modified file targets** with a strict set of custom enhancements:
+This kernel applies a total of **12 modified file targets** with a strict set of custom enhancements:
 
 #### 1. Audio Driver: [sound/hda/codecs/realtek/alc269.c](file:///sound/hda/codecs/realtek/alc269.c) (4 Tweaks)
 *   **Enum Injection**: Injects `ALC269_FIXUP_KING_KONG` flag.
@@ -92,6 +95,12 @@ This kernel applies a total of **10 modified file targets** with a strict set of
 #### 10. Intel GPU Display Parameters: [drivers/gpu/drm/i915/display/intel_display_params.h](file:///drivers/gpu/drm/i915/display/intel_display_params.h) (2 Tweaks)
 *   **Frame Buffer Compression**: Changes `enable_fbc` default value to `1` (forced enabled).
 *   **Nuclear Pageflip**: Changes `nuclear_pageflip` default value to `true` (forced enabled).
+
+#### 11. Lenovo ThinkPad Extras: [drivers/platform/x86/lenovo/thinkpad_acpi.c](file:///drivers/platform/x86/lenovo/thinkpad_acpi.c) (1 Tweak)
+*   **Forced Performance Profile**: Overrides initialization phase to automatically set the thermal profile to performance mode (`PLATFORM_PROFILE_PERFORMANCE`) on startup.
+
+#### 12. Dell Laptop Extras: [drivers/platform/x86/dell/dell-pc.c](file:///drivers/platform/x86/dell/dell-pc.c) (1 Tweak)
+*   **Forced Performance Profile**: Overrides the probe phase to automatically force the Dell PC thermal mode to performance (`DELL_PERFORMANCE`) at startup if supported.
 
 ---
 
