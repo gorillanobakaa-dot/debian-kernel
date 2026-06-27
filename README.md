@@ -35,6 +35,12 @@ We began our optimization journey on Kernel 7.0.9 and have successfully ported a
 5.  **Ultra-Fast Reflexes (The Short Stopwatch)**:
     *   *The Problem*: If a packet of data is lost, the kernel waits up to 2 seconds to try again, causing a freeze.
     *   *The Fix*: We shortened the stopwatch. The kernel now waits only **10 milliseconds** (0.01 seconds) to resend lost packets, making web browsing feel incredibly snappy.
+6.  **Forced High-Performance Power Limit (Cooler running under load)**:
+    *   *The Problem*: Sony motherboard defaults to a "balanced" profile that throttles the CPU speed aggressively to avoid heat.
+    *   *The Fix*: We reprogrammed the driver to force-enable the motherboard's **Performance thermal profile** at startup, allowing fans to run aggressively and keeping the CPU from slowing down under load.
+7.  **Smooth Display & Low-Latency Rendering (Wayland Optimization)**:
+    *   *The Problem*: Screen refreshes and page flips have minor sync delays, causing visual lag and tearing.
+    *   *The Fix*: We enabled **Frame Buffer Compression** to save memory speed, and force-enabled **Nuclear Pageflip** so Wayland renders display updates in a single atomic sweep, making animations feel buttery smooth.
 
 ---
 
@@ -42,7 +48,7 @@ We began our optimization journey on Kernel 7.0.9 and have successfully ported a
 
 ### 1. Cohesive Tweak Catalog
 
-This kernel applies a total of **8 modified file targets** with a strict set of custom enhancements:
+This kernel applies a total of **10 modified file targets** with a strict set of custom enhancements:
 
 #### 1. Audio Driver: [sound/hda/codecs/realtek/alc269.c](file:///sound/hda/codecs/realtek/alc269.c) (4 Tweaks)
 *   **Enum Injection**: Injects `ALC269_FIXUP_KING_KONG` flag.
@@ -79,6 +85,13 @@ This kernel applies a total of **8 modified file targets** with a strict set of 
 *   **Port Reuse**: Sets `TCP_TIMEWAIT_LEN` to `1*HZ` (1 second) to recycle local ports instantly.
 *   **Delayed ACK acceleration**: Lowers `TCP_DELACK_MAX` to `HZ/50` (20ms) and sets minimums to 2 jiffies.
 *   **Initial CWND**: Increases `TCP_INIT_CWND` to 128 packets.
+
+#### 9. Sony Motherboard Extras: [drivers/platform/x86/sony-laptop.c](file:///drivers/platform/x86/sony-laptop.c) (1 Tweak)
+*   **Forced Performance Thermal Mode**: Overrides default startup SNC thermal profile to force-set performance mode (`mode = 2`) if it is listed in the BIOS capability mask.
+
+#### 10. Intel GPU Display Parameters: [drivers/gpu/drm/i915/display/intel_display_params.h](file:///drivers/gpu/drm/i915/display/intel_display_params.h) (2 Tweaks)
+*   **Frame Buffer Compression**: Changes `enable_fbc` default value to `1` (forced enabled).
+*   **Nuclear Pageflip**: Changes `nuclear_pageflip` default value to `true` (forced enabled).
 
 ---
 
