@@ -54,15 +54,31 @@ make -C "$TARGET_SOURCE" olddefconfig
 # 4. Trigger the optimized GCC compilation package build
 echo -e "\n🛠️ [Step 4/4] Starting kernel compilation (bindeb-pkg)..."
 TIMESTAMP=$(date +"%Y.%m.%d--%H.%M")
-LVERSION="-unleashed.gorilla-+60db-bbr-fq-codel-${TIMESTAMP}"
+LVERSION="-unleashed.gorilla-eapd.5db-bbr-fq-codel-${TIMESTAMP}"
 
 export KCFLAGS="-O3 -march=native -mtune=native -pipe"
 echo "  Optimizations enabled: $KCFLAGS"
-echo "  CPUs utilized:        $(nproc)"
+echo "  CPUs utilized:        4"
 echo "  Starting compilation..."
 
-make -C "$TARGET_SOURCE" LOCALVERSION="${LVERSION}" -j"$(nproc)" bindeb-pkg KDEB_PKGVERSION="7.1.2"
+make -C "$TARGET_SOURCE" LOCALVERSION="${LVERSION}" -j4 bindeb-pkg KDEB_PKGVERSION="1"
+
+echo -e "\n📦 [Step 5/5] Moving compiled binaries to the output directory..."
+PARENT_DIR="$(dirname "$TARGET_SOURCE")"
+DEST_DIR="$SCRIPT_DIR/output_binaries"
+mkdir -p "$DEST_DIR"
+
+# Move and clean up filenames to prevent redundant "7.1.2" tags
+for file in "$PARENT_DIR"/linux-*{.deb,.buildinfo,.changes}; do
+    [ -e "$file" ] || continue
+    base=$(basename "$file")
+    # Clean up redundant _7.1.2 from the image and headers
+    clean_name="${base/_7.1.2_amd64/_amd64}"
+    clean_name="${clean_name/_1_amd64/_amd64}"
+    mv "$file" "$DEST_DIR/$clean_name"
+done
 
 echo -e "\n======================================================================"
 echo "✅ SUCCESS: Gorilla Unleashed Kernel 7.1.2 built successfully!"
+echo "📂 Binaries saved to: $DEST_DIR"
 echo "======================================================================"

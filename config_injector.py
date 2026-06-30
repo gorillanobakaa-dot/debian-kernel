@@ -17,10 +17,7 @@ MANDATORY_FLAGS = {
     "CONFIG_NET_SCH_FQ_CODEL": "y",
     "CONFIG_NET_RX_BUSY_POLL": "y",
     
-    # Kernel Preemption & HZ
-    "CONFIG_HZ_250": "y",
-    "CONFIG_HZ_1000": "n",
-    "CONFIG_HZ": "250",
+    # Kernel Preemption
     "CONFIG_PREEMPT_VOLUNTARY": "n",
     "CONFIG_PREEMPT": "y",
     "CONFIG_PREEMPT_COUNT": "y",
@@ -54,10 +51,20 @@ MANDATORY_FLAGS = {
     
     # CPU/Processor Performance & Native Tuning
     "CONFIG_X86_NATIVE_CPU": "y",
+    "CONFIG_GENERIC_CPU": "n",
+    "CONFIG_MIVYBRIDGE": "y",
     "CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE": "y",
     "CONFIG_CPU_FREQ_GOV_PERFORMANCE": "y",
     "CONFIG_CPU_FREQ_GOV_SCHEDUTIL": "y",
     "CONFIG_SCHED_AUTOGROUP": "y",
+    
+    # Tickless & HZ Tuning
+    "CONFIG_HZ_250": "n",
+    "CONFIG_HZ_1000": "y",
+    "CONFIG_HZ": "1000",
+    "CONFIG_NO_HZ_FULL": "y",
+    "CONFIG_NO_HZ": "y",
+    "CONFIG_NO_HZ_COMMON": "y",
 
     # High Definition Audio (HDA) dynamic patch loading & troubleshooting
     "CONFIG_SND_HDA_HWDEP": "y",

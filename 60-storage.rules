@@ -1,0 +1,2 @@
+# Increase queue depth and lock APM/Write Cache for Kingston DC600M
+ACTION=="add|change", KERNEL=="sda", ATTR{queue/nr_requests}="64", RUN+="/sbin/hdparm -B 255 -W 1 /dev/sda"

@@ -1,0 +1,2 @@
+# T06: C-State Sleep Ceiling
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash processor.max_cstate=2"

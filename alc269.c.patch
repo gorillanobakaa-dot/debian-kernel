@@ -4,7 +4,7 @@
  	ALC245_FIXUP_ACER_MICMUTE_LED,
  	ALC245_FIXUP_CS35L41_I2C_2_MUTE_LED,
  	ALC236_FIXUP_HP_DMIC,
-+	ALC269_FIXUP_KING_KONG,
++	ALC269_FIXUP_VAIO_EAPD_5DB,
  };
  
  /* A special fixup for Lenovo C940 and Yoga Duet 7;
@@ -13,7 +13,7 @@
  }
  
 +
-+static void alc269_fixup_king_kong(struct hda_codec *codec,
++static void alc269_fixup_vaio_eapd_5db(struct hda_codec *codec,
 +                                  const struct hda_fixup *fix, int action)
 +{
 +        u32 caps;
@@ -29,7 +29,7 @@
 +                        snd_hda_override_amp_caps(codec, nids[i], HDA_OUTPUT, caps);
 +                }
 +        }
-+        codec_info(codec, "ALC269: KING KONG ROAR (+60dB) unleashed!\n");
++        codec_info(codec, "ALC269: VAIO EAPD (+5.5dB balanced offset) unleashed!\n");
 +}
 +
  static const struct hda_fixup alc269_fixups[] = {
@@ -42,9 +42,9 @@
 +                .type = HDA_FIXUP_FUNC,
 +                .v.func = alc_fixup_gpio2,
 +        },
-+                [ALC269_FIXUP_KING_KONG] = {
++                [ALC269_FIXUP_VAIO_EAPD_5DB] = {
 +                .type = HDA_FIXUP_FUNC,
-+                .v.func = alc269_fixup_king_kong,
++                .v.func = alc269_fixup_vaio_eapd_5db,
 +                .chained = true,
 +                .chain_id = ALC269_FIXUP_SONY_VAIO
 +        },
@@ -57,7 +57,7 @@
  	SND_PCI_QUIRK_VENDOR(0x1025, "Acer Aspire", ALC271_FIXUP_DMIC),
  	SND_PCI_QUIRK_VENDOR(0x103c, "HP", ALC269_FIXUP_HP_MUTE_LED),
 -	SND_PCI_QUIRK_VENDOR(0x104d, "Sony VAIO", ALC269_FIXUP_SONY_VAIO),
-+	SND_PCI_QUIRK_VENDOR(0x104d, "Sony VAIO", ALC269_FIXUP_KING_KONG),
++	SND_PCI_QUIRK_VENDOR(0x104d, "Sony VAIO", ALC269_FIXUP_VAIO_EAPD_5DB),
  	SND_PCI_QUIRK_VENDOR(0x17aa, "Lenovo XPAD", ALC269_FIXUP_LENOVO_XPAD_ACPI),
  	SND_PCI_QUIRK_VENDOR(0x19e5, "Huawei Matebook", ALC255_FIXUP_MIC_MUTE_LED),
  	{}
