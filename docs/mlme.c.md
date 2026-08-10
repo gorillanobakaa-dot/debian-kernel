@@ -51,13 +51,15 @@ own hardware is physically built to do — that ceiling is burned into the card 
 no software changes it. What changes is **who decides**: your machine, not
 somebody else's router.
 
-**Why it matters even though the number looked the same.** On this VAIO the AP
-asked for 20 dBm and the AR9485's own ceiling is about 20 dBm anyway, so the
-practical loss that day was nothing. But the *mechanism* is the point: any router
-anywhere can send that slip with any number in it, including a much lower one,
-and until this patch we would have complied without asking. On the ALFA
-AWUS036NH, and on the 5 GHz family builds, the numbers stop matching and the
-difference becomes real.
+**Why it matters even though the number looked the same.** The AP asked for
+20 dBm. The AR9485's real calibrated ceiling is **17 dBm** (see
+`case-study-txpower-drop.md` — the 20 dBm figure Build 2 displayed was a
+regulatory-table number the silicon cannot reach). So the AP's demand was never
+the binding constraint on this card, and the practical loss that day was nothing.
+But the *mechanism* is the point: any router anywhere can send that slip with any
+number in it, including a much lower one, and until this patch we would have
+complied without asking. On the ALFA AWUS036NH, and on the 5 GHz family builds,
+the numbers stop matching and the difference becomes real.
 
 **A word on responsibility:** transmit power limits exist partly for genuine
 reasons. Removing the AP's vote puts that judgement in *your* hands. Use what is

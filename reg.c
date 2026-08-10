@@ -1805,9 +1805,13 @@ static void handle_channel_single_rule(struct wiphy *wiphy,
 		 *
 		 * This CANNOT exceed what the silicon can do: the driver clamps to
 		 * EEPROM per-rate calibration afterwards (ath9k: power_limit in
-		 * hw.c). On the AR9485 -- whose own ceiling is already 20 dBm --
-		 * this is a no-op; it pays off on radios whose hardware maximum
-		 * exceeds the regulatory table's figure. */
+		 * hw.c). On the AR9485 this is a no-op: its real calibrated
+		 * ceiling is 17 dBm, BELOW every regulatory figure in play, so
+		 * max() simply keeps the driver value. (The 20 dBm this card once
+		 * displayed was a regulatory-table number the silicon cannot
+		 * reach -- supplied by the very country IE we now ignore. See
+		 * docs/case-study-txpower-drop.md.) This pays off on radios whose
+		 * hardware maximum EXCEEDS the regulatory table's figure. */
 		chan->max_power = max(chan->orig_mpwr, chan->max_reg_power);
 	} else
 		chan->max_power = chan->max_reg_power;
@@ -1923,9 +1927,13 @@ static void handle_channel_adjacent_rules(struct wiphy *wiphy,
 		 *
 		 * This CANNOT exceed what the silicon can do: the driver clamps to
 		 * EEPROM per-rate calibration afterwards (ath9k: power_limit in
-		 * hw.c). On the AR9485 -- whose own ceiling is already 20 dBm --
-		 * this is a no-op; it pays off on radios whose hardware maximum
-		 * exceeds the regulatory table's figure. */
+		 * hw.c). On the AR9485 this is a no-op: its real calibrated
+		 * ceiling is 17 dBm, BELOW every regulatory figure in play, so
+		 * max() simply keeps the driver value. (The 20 dBm this card once
+		 * displayed was a regulatory-table number the silicon cannot
+		 * reach -- supplied by the very country IE we now ignore. See
+		 * docs/case-study-txpower-drop.md.) This pays off on radios whose
+		 * hardware maximum EXCEEDS the regulatory table's figure. */
 		chan->max_power = max(chan->orig_mpwr, chan->max_reg_power);
 	} else {
 		chan->max_power = chan->max_reg_power;
