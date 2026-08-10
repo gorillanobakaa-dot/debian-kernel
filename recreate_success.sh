@@ -101,13 +101,15 @@ LVERSION=$(python3 "$SCRIPT_DIR/kernel_build_namer.py" localversion \
 
 export KCFLAGS="-O3 -march=native -mtune=native -pipe"
 # ccache: skip recompiling unchanged files across builds. Big win on the 2012
-# Ivy Bridge — a full rebuild goes from ~an hour to minutes when the cache is
-# warm. Auto-detected; harmless if ccache isn't installed (CC falls back to gcc).
-if command -v ccache >/dev/null 2>&1; then
-    CC_WRAP='CC=ccache gcc'
-    echo "  ccache:                ON ($(ccache -s 2>/dev/null | awk -F': ' '/Cache size/{print $2}'))"
+# Ivy Bridge — a full rebuild goes from ~an hour to minutes when the cache is warm.
+# Wired TRANSPARENTLY via PATH: /usr/lib/ccache/{gcc,cc} are symlinks that shim to
+# ccache, so the kernel's compiler-detection still sees plain "gcc" and works.
+# (Do NOT pass CC="ccache gcc" — word-splitting makes the kernel see "ccache"
+# alone as the compiler and abort with "unknown C compiler".)
+if [ -d /usr/lib/ccache ]; then
+    export PATH="/usr/lib/ccache:$PATH"
+    echo "  ccache:                ON via /usr/lib/ccache ($(ccache -s 2>/dev/null | awk -F': ' '/Cache size/{print $2}'))"
 else
-    CC_WRAP=''
     echo "  ccache:                not installed (compiling cold)"
 fi
 echo "  Optimizations enabled: $KCFLAGS"
@@ -116,7 +118,7 @@ echo "  CPUs utilized:        $(nproc)"
 echo "  Starting compilation..."
 
 # Capture the REAL compiler exit, not tee's (directive §2: never trust a piped exit).
-make -C "$TARGET_SOURCE" $CC_WRAP LOCALVERSION="${LVERSION}" -j"$(nproc)" bindeb-pkg KDEB_PKGVERSION="1"
+make -C "$TARGET_SOURCE" LOCALVERSION="${LVERSION}" -j"$(nproc)" bindeb-pkg KDEB_PKGVERSION="1"
 BUILD_RC=$?
 if [ "$BUILD_RC" -ne 0 ]; then
     echo "❌ Build FAILED (exit $BUILD_RC). Not moving artifacts."; exit "$BUILD_RC"
