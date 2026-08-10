@@ -1,0 +1,297 @@
+# Gorilla Unleashed -- net/wireless/reg.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/reg.c.patch
+# Rationale: docs/reg.c.md
+# +87 / -55 lines
+--- a/net/wireless/reg.c
++++ b/net/wireless/reg.c
+@@ -1557,43 +1557,43 @@
+ {
+ 	u32 channel_flags = 0;
+ 	if (rd_flags & NL80211_RRF_NO_IR_ALL)
+-		channel_flags |= IEEE80211_CHAN_NO_IR;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_DFS)
+-		channel_flags |= IEEE80211_CHAN_RADAR;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_OFDM)
+-		channel_flags |= IEEE80211_CHAN_NO_OFDM;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_OUTDOOR)
+-		channel_flags |= IEEE80211_CHAN_INDOOR_ONLY;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_IR_CONCURRENT)
+ 		channel_flags |= IEEE80211_CHAN_IR_CONCURRENT;
+ 	if (rd_flags & NL80211_RRF_NO_HT40MINUS)
+-		channel_flags |= IEEE80211_CHAN_NO_HT40MINUS;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_HT40PLUS)
+-		channel_flags |= IEEE80211_CHAN_NO_HT40PLUS;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_80MHZ)
+-		channel_flags |= IEEE80211_CHAN_NO_80MHZ;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_160MHZ)
+-		channel_flags |= IEEE80211_CHAN_NO_160MHZ;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_HE)
+-		channel_flags |= IEEE80211_CHAN_NO_HE;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_320MHZ)
+-		channel_flags |= IEEE80211_CHAN_NO_320MHZ;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_EHT)
+-		channel_flags |= IEEE80211_CHAN_NO_EHT;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_DFS_CONCURRENT)
+ 		channel_flags |= IEEE80211_CHAN_DFS_CONCURRENT;
+ 	if (rd_flags & NL80211_RRF_NO_6GHZ_VLP_CLIENT)
+-		channel_flags |= IEEE80211_CHAN_NO_6GHZ_VLP_CLIENT;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_NO_6GHZ_AFC_CLIENT)
+-		channel_flags |= IEEE80211_CHAN_NO_6GHZ_AFC_CLIENT;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_PSD)
+-		channel_flags |= IEEE80211_CHAN_PSD;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	if (rd_flags & NL80211_RRF_ALLOW_6GHZ_VLP_AP)
+ 		channel_flags |= IEEE80211_CHAN_ALLOW_6GHZ_VLP_AP;
+ 	if (rd_flags & NL80211_RRF_ALLOW_20MHZ_ACTIVITY)
+ 		channel_flags |= IEEE80211_CHAN_ALLOW_20MHZ_ACTIVITY;
+ 	if (rd_flags & NL80211_RRF_NO_UHR)
+-		channel_flags |= IEEE80211_CHAN_NO_UHR;
++		channel_flags |= 0 /* GORILLA: UNLEASHED */;
+ 	return channel_flags;
+ }
+ 
+@@ -1764,7 +1764,7 @@
+ 		chan->max_reg_power = chan->max_power = chan->orig_mpwr =
+ 			(int) MBM_TO_DBM(power_rule->max_eirp);
+ 
+-		if (chan->flags & IEEE80211_CHAN_RADAR) {
++		if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 			chan->dfs_cac_ms = IEEE80211_DFS_MIN_CAC_TIME_MS;
+ 			if (reg_rule->dfs_cac_ms)
+ 				chan->dfs_cac_ms = reg_rule->dfs_cac_ms;
+@@ -1786,7 +1786,7 @@
+ 		      MBI_TO_DBI(power_rule->max_antenna_gain));
+ 	chan->max_reg_power = (int) MBM_TO_DBM(power_rule->max_eirp);
+ 
+-	if (chan->flags & IEEE80211_CHAN_RADAR) {
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 		if (reg_rule->dfs_cac_ms)
+ 			chan->dfs_cac_ms = reg_rule->dfs_cac_ms;
+ 		else
+@@ -1797,16 +1797,22 @@
+ 		chan->psd = reg_rule->psd;
+ 
+ 	if (chan->orig_mpwr) {
+-		/*
+-		 * Devices that use REGULATORY_COUNTRY_IE_FOLLOW_POWER
+-		 * will always follow the passed country IE power settings.
+-		 */
+-		if (initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
+-		    wiphy->regulatory_flags & REGULATORY_COUNTRY_IE_FOLLOW_POWER)
+-			chan->max_power = chan->max_reg_power;
+-		else
+-			chan->max_power = min(chan->orig_mpwr,
+-					      chan->max_reg_power);
++		/* GORILLA UNLEASHED: was min(orig_mpwr, max_reg_power), and above
++		 * that a branch letting a country IE dictate power outright. A
++		 * regulatory table may not push the radio BELOW its own calibrated
++		 * capability, so the hardware figure wins. max_reg_power is left
++		 * untouched as the advertised regulatory value.
++		 *
++		 * This CANNOT exceed what the silicon can do: the driver clamps to
++		 * EEPROM per-rate calibration afterwards (ath9k: power_limit in
++		 * hw.c). On the AR9485 this is a no-op: its real calibrated
++		 * ceiling is 17 dBm, BELOW every regulatory figure in play, so
++		 * max() simply keeps the driver value. (The 20 dBm this card once
++		 * displayed was a regulatory-table number the silicon cannot
++		 * reach -- supplied by the very country IE we now ignore. See
++		 * docs/case-study-txpower-drop.md.) This pays off on radios whose
++		 * hardware maximum EXCEEDS the regulatory table's figure. */
++		chan->max_power = max(chan->orig_mpwr, chan->max_reg_power);
+ 	} else
+ 		chan->max_power = chan->max_reg_power;
+ }
+@@ -1857,7 +1863,7 @@
+ 		chan->max_power = chan->max_reg_power;
+ 		chan->orig_mpwr = chan->max_reg_power;
+ 
+-		if (chan->flags & IEEE80211_CHAN_RADAR) {
++		if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 			chan->dfs_cac_ms = IEEE80211_DFS_MIN_CAC_TIME_MS;
+ 			if (rrule1->dfs_cac_ms || rrule2->dfs_cac_ms)
+ 				chan->dfs_cac_ms = max_t(unsigned int,
+@@ -1903,7 +1909,7 @@
+ 				    MBM_TO_DBM(power_rule1->max_eirp),
+ 				    MBM_TO_DBM(power_rule2->max_eirp));
+ 
+-	if (chan->flags & IEEE80211_CHAN_RADAR) {
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 		if (rrule1->dfs_cac_ms || rrule2->dfs_cac_ms)
+ 			chan->dfs_cac_ms = max_t(unsigned int,
+ 						 rrule1->dfs_cac_ms,
+@@ -1913,15 +1919,22 @@
+ 	}
+ 
+ 	if (chan->orig_mpwr) {
+-		/* Devices that use REGULATORY_COUNTRY_IE_FOLLOW_POWER
+-		 * will always follow the passed country IE power settings.
+-		 */
+-		if (initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
+-		    wiphy->regulatory_flags & REGULATORY_COUNTRY_IE_FOLLOW_POWER)
+-			chan->max_power = chan->max_reg_power;
+-		else
+-			chan->max_power = min(chan->orig_mpwr,
+-					      chan->max_reg_power);
++		/* GORILLA UNLEASHED: was min(orig_mpwr, max_reg_power), and above
++		 * that a branch letting a country IE dictate power outright. A
++		 * regulatory table may not push the radio BELOW its own calibrated
++		 * capability, so the hardware figure wins. max_reg_power is left
++		 * untouched as the advertised regulatory value.
++		 *
++		 * This CANNOT exceed what the silicon can do: the driver clamps to
++		 * EEPROM per-rate calibration afterwards (ath9k: power_limit in
++		 * hw.c). On the AR9485 this is a no-op: its real calibrated
++		 * ceiling is 17 dBm, BELOW every regulatory figure in play, so
++		 * max() simply keeps the driver value. (The 20 dBm this card once
++		 * displayed was a regulatory-table number the silicon cannot
++		 * reach -- supplied by the very country IE we now ignore. See
++		 * docs/case-study-txpower-drop.md.) This pays off on radios whose
++		 * hardware maximum EXCEEDS the regulatory table's figure. */
++		chan->max_power = max(chan->orig_mpwr, chan->max_reg_power);
+ 	} else {
+ 		chan->max_power = chan->max_reg_power;
+ 	}
+@@ -2001,12 +2014,12 @@
+ 		    request_wiphy->regulatory_flags & REGULATORY_STRICT_REG) {
+ 			pr_debug("Disabling freq %d.%03d MHz for good\n",
+ 				 chan->center_freq, chan->freq_offset);
+-			chan->orig_flags |= IEEE80211_CHAN_DISABLED;
++			chan->orig_flags |= 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */;
+ 			chan->flags = chan->orig_flags;
+ 		} else {
+ 			pr_debug("Disabling freq %d.%03d MHz\n",
+ 				 chan->center_freq, chan->freq_offset);
+-			chan->flags |= IEEE80211_CHAN_DISABLED;
++			chan->flags |= 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */;
+ 		}
+ 		return;
+ 	}
+@@ -2173,8 +2186,8 @@
+ 
+ 	chan_before = *chan;
+ 
+-	if (chan->flags & IEEE80211_CHAN_NO_IR) {
+-		chan->flags &= ~IEEE80211_CHAN_NO_IR;
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: NO_IR stripped */) {
++		chan->flags &= ~0 /* GORILLA_UNLEASHED: NO_IR stripped */;
+ 		channel_changed = true;
+ 	}
+ 
+@@ -2238,7 +2251,7 @@
+ {
+ 	if (!chan)
+ 		return false;
+-	if (chan->flags & IEEE80211_CHAN_DISABLED)
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */)
+ 		return false;
+ 	/* This would happen when regulatory rules disallow HT40 completely */
+ 	if ((chan->flags & IEEE80211_CHAN_NO_HT40) == IEEE80211_CHAN_NO_HT40)
+@@ -2431,7 +2444,7 @@
+ 		case NL80211_IFTYPE_STATION:
+ 		case NL80211_IFTYPE_P2P_CLIENT:
+ 			ret = cfg80211_chandef_usable(wiphy, &chandef,
+-						      IEEE80211_CHAN_DISABLED);
++						      0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */);
+ 			if (!ret)
+ 				return ret;
+ 			break;
+@@ -2548,9 +2561,9 @@
+ 		pr_debug("Disabling freq %d.%03d MHz as custom regd has no rule that fits it\n",
+ 			 chan->center_freq, chan->freq_offset);
+ 		if (wiphy->regulatory_flags & REGULATORY_WIPHY_SELF_MANAGED) {
+-			chan->flags |= IEEE80211_CHAN_DISABLED;
++			chan->flags |= 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */;
+ 		} else {
+-			chan->orig_flags |= IEEE80211_CHAN_DISABLED;
++			chan->orig_flags |= 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */;
+ 			chan->flags = chan->orig_flags;
+ 		}
+ 		return;
+@@ -2574,7 +2587,7 @@
+ 	chan->max_reg_power = chan->max_power =
+ 		(int) MBM_TO_DBM(power_rule->max_eirp);
+ 
+-	if (chan->flags & IEEE80211_CHAN_RADAR) {
++	if (chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) {
+ 		if (reg_rule->dfs_cac_ms)
+ 			chan->dfs_cac_ms = reg_rule->dfs_cac_ms;
+ 		else
+@@ -2584,7 +2597,13 @@
+ 	if (chan->flags & IEEE80211_CHAN_PSD)
+ 		chan->psd = reg_rule->psd;
+ 
+-	chan->max_power = chan->max_reg_power;
++	/* GORILLA UNLEASHED: see the note in handle_channel_single_rule. This
++	 * is the branch ath9k actually takes (REGULATORY_CUSTOM_REG -- shows as
++	 * "country 99" in `iw reg get`), so it is the one that sets the dBm
++	 * figure `iw phy info` reports per channel. */
++	chan->max_power = chan->orig_mpwr ?
++			  max(chan->orig_mpwr, chan->max_reg_power) :
++			  chan->max_reg_power;
+ }
+ 
+ static void handle_band_custom(struct wiphy *wiphy,
+@@ -2852,8 +2871,21 @@
+ 			return REG_REQ_IGNORE;
+ 		return REG_REQ_ALREADY_SET;
+ 	} else {
+-		if (wiphy->regulatory_flags & REGULATORY_COUNTRY_IE_IGNORE)
+-			return REG_REQ_IGNORE;
++		/* GORILLA UNLEASHED: an access point does not get to re-regulate
++		 * this radio. Upstream gates this on the per-driver opt-in flag
++		 * REGULATORY_COUNTRY_IE_IGNORE; we make it UNCONDITIONAL so it
++		 * covers every driver -- ath9k, rt2800usb (ALFA AWUS036NH), and
++		 * anything added later -- not just the ones that opt in.
++		 *
++		 * This is the exact path that, on 2026-08-10, logged
++		 *   "ath: regdomain 0x833a dynamically updated by country element"
++		 *   "ath: Country alpha2 being used: GB"
++		 * four seconds after associating, undoing the world-regdomain the
++		 * boot had correctly established. Rationale: docs/regd.c.md.
++		 *
++		 * Memory: reg_process_hint() frees the request on REG_REQ_IGNORE
++		 * via its out_free label, so this leaks nothing. */
++		return REG_REQ_IGNORE;
+ 	}
+ 
+ 	if (unlikely(!is_an_alpha2(country_ie_request->alpha2)))
+@@ -2955,12 +2987,12 @@
+ static void reg_copy_dfs_chan_state(struct ieee80211_channel *dst_chan,
+ 				    struct ieee80211_channel *src_chan)
+ {
+-	if (!(dst_chan->flags & IEEE80211_CHAN_RADAR) ||
+-	    !(src_chan->flags & IEEE80211_CHAN_RADAR))
++	if (!(dst_chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */) ||
++	    !(src_chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */))
+ 		return;
+ 
+-	if (dst_chan->flags & IEEE80211_CHAN_DISABLED ||
+-	    src_chan->flags & IEEE80211_CHAN_DISABLED)
++	if (dst_chan->flags & 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */ ||
++	    src_chan->flags & 0 /* GORILLA_UNLEASHED: CHAN_DISABLED stripped */)
+ 		return;
+ 
+ 	if (src_chan->center_freq == dst_chan->center_freq &&
+@@ -3656,7 +3688,7 @@
+ 	bool processing;
+ 
+ 	if (beacon_chan->beacon_found ||
+-	    beacon_chan->flags & IEEE80211_CHAN_RADAR ||
++	    beacon_chan->flags & 0 /* GORILLA_UNLEASHED: RADAR/DFS stripped */ ||
+ 	    (beacon_chan->band == NL80211_BAND_2GHZ &&
+ 	     !freq_is_chan_12_13_14(beacon_chan->center_freq)))
+ 		return;

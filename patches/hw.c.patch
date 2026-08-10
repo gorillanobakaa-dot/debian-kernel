@@ -1,0 +1,27 @@
+# Gorilla Unleashed -- drivers/net/wireless/ath/ath9k/hw.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/hw.c.patch
+# Rationale: docs/hw.c.md
+# +3 / -3 lines
+--- a/drivers/net/wireless/ath/ath9k/hw.c
++++ b/drivers/net/wireless/ath/ath9k/hw.c
+@@ -398,7 +398,7 @@
+ 
+ 	ah->config.dma_beacon_response_time = 1;
+ 	ah->config.sw_beacon_response_time = 6;
+-	ah->config.cwm_ignore_extcca = false;
++	ah->config.cwm_ignore_extcca = true; /* GORILLA: UNLEASHED - Force 40MHz, ignore neighbors */
+ 	ah->config.analog_shiftreg = 1;
+ 
+ 	ah->config.rx_intr_mitigation = true;
+@@ -2956,8 +2956,8 @@
+ 		ctl = ath9k_regd_get_ctl(reg, chan);
+ 
+ 	channel = chan->chan;
+-	chan_pwr = min_t(int, channel->max_power * 2, MAX_COMBINED_POWER);
+-	new_pwr = min_t(int, chan_pwr, reg->power_limit);
++	chan_pwr = MAX_COMBINED_POWER; /* GORILLA: UNLEASHED POWER. Maximize TX for StarTrek levels. */
++	new_pwr = MAX_COMBINED_POWER;  /* GORILLA: No limits. */
+ 
+ 	ah->eep_ops->set_txpower(ah, chan, ctl,
+ 				 get_antenna_gain(ah, chan), new_pwr, test);

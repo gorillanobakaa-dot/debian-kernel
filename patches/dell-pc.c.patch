@@ -1,0 +1,28 @@
+# Gorilla Unleashed -- drivers/platform/x86/dell/dell-pc.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/dell-pc.c.patch
+# Rationale: docs/dell-pc.c.md
+# +8 / -6 lines
+--- a/drivers/platform/x86/dell/dell-pc.c
++++ b/drivers/platform/x86/dell/dell-pc.c
+@@ -239,12 +239,14 @@
+ 	if (supported_modes & DELL_PERFORMANCE)
+ 		__set_bit(PLATFORM_PROFILE_PERFORMANCE, choices);
+ 
+-	/* Make sure that ACPI is in sync with the profile set by USTT */
+-	current_mode = thermal_get_mode();
+-	if (current_mode < 0)
+-		return current_mode;
+-
+-	thermal_set_mode(current_mode);
++	/* GORILLA: Force performance thermal profile on boot if supported */
++	if (supported_modes & DELL_PERFORMANCE) {
++		thermal_set_mode(DELL_PERFORMANCE);
++	} else {
++		current_mode = thermal_get_mode();
++		if (current_mode >= 0)
++			thermal_set_mode(current_mode);
++	}
+ 
+ 	return 0;
+ }

@@ -4,6 +4,47 @@ A fully automated repository containing patches, configurations, and a one-click
 
 ---
 
+## Start here
+
+| I want to… | Go to |
+|---|---|
+| **see exactly what was changed** | [`patches/`](patches/) — 14 patches, **+196 / −103 lines** total |
+| **check the claims myself** | `./verify_patches.sh` — applies every patch to a fresh tarball extraction and proves the result is byte-identical to the shipped sources (**14/14 PASS**) |
+| **check my running kernel** | `./kernel_selftest.sh` — 24 plain-English checks, reads only, changes nothing |
+| **understand a setting** | [`docs/YOUR_KERNEL_EXPLAINED.md`](docs/YOUR_KERNEL_EXPLAINED.md) — layman + developer, every knob |
+| **build it** | `./recreate_success.sh /path/to/linux-7.1.2` |
+| **know what was measured vs. asserted** | [`docs/VERIFIED_MEASUREMENTS.md`](docs/VERIFIED_MEASUREMENTS.md) |
+
+## Current state — Build 3 (2026-08-10)
+
+The headline feature is complete. Regulatory restrictions are cut at **all four**
+layers, including the two that are controlled by *your router* rather than by a
+lookup table: the 802.11d country IE and the 802.11h/DTPC power constraint.
+Verified on real hardware — the access point advertises `Country: GB`, and the
+kernel stays at `country 00` (world). Details:
+[`docs/regd.c.md`](docs/regd.c.md), [`docs/mlme.c.md`](docs/mlme.c.md).
+
+Also new: `CONFIG_CFG80211_REG_RELAX_NO_IR=y`; `MTD_NAND_NANDSIM` moved to a
+module (built in, it instantiated a useless fake flash device on every boot); a
+shipped udev rule that selects BFQ automatically; and the self-test above.
+
+## An honest word about this README
+
+Everything from `## 🆕 What's Actually NEW` down was written in June 2026 and is
+kept for the reasoning, not as a status report. Two corrections apply to it:
+
+1. **Performance claims here are design rationale, not measurements.** No A/B
+   benchmark has ever been run on this hardware. `docs/VERIFIED_MEASUREMENTS.md`
+   lists what *was* measured and, explicitly, what was not.
+2. **The "+5.5 dB" audio figure is the fixup's own label, not a measured gain.**
+   The amp offset is `0x14` (20 steps); the step→dB mapping was never measured.
+
+Superseded material lives in [`historical/`](historical/) — including the original
+7.0.9 `.patch` files, which **do not apply to 7.1.2** and once caused an audit to
+wrongly conclude this kernel was unpatched. That story is worth reading before
+trusting any old artifact in any repo:
+[`historical/README.md`](historical/README.md).
+
 ---
 
 ## 🆕 What's Actually NEW in 7.1.2 (From 7.0.9 → 7.1.2)

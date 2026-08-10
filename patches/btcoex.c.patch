@@ -1,0 +1,18 @@
+# Gorilla Unleashed -- drivers/net/wireless/ath/ath9k/btcoex.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/btcoex.c.patch
+# Rationale: docs/btcoex.c.md
+# +2 / -2 lines
+--- a/drivers/net/wireless/ath/ath9k/btcoex.c
++++ b/drivers/net/wireless/ath/ath9k/btcoex.c
+@@ -68,8 +68,8 @@
+ 		.bt_priority_time = 2,
+ 		.bt_first_slot_time = 5,
+ 		.bt_hold_rx_clear = true,
+-		.wl_active_time = 0x20,
+-		.wl_qc_time = 0x20,
++		.wl_active_time = 0xFF, /* GORILLA: Wi-Fi is the BOSS. Max airtime reserved for WLAN. */
++		.wl_qc_time = 0xFF,     /* GORILLA: Max Quiet Collision time for WLAN */
+ 	};
+ 	bool rxclear_polarity = ath_bt_config.bt_rxclear_polarity;
+ 	u8 time_extend = ath_bt_config.bt_time_extend;

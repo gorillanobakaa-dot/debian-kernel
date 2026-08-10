@@ -1,0 +1,19 @@
+# Gorilla Unleashed -- drivers/gpu/drm/i915/display/intel_display_params.h
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/intel_display_params.h.patch
+# Rationale: docs/intel_display_params.h.md
+# +2 / -2 lines
+--- a/drivers/gpu/drm/i915/display/intel_display_params.h
++++ b/drivers/gpu/drm/i915/display/intel_display_params.h
+@@ -42,9 +42,9 @@
+ 	param(bool, force_reset_modeset_test, false, 0600) \
+ 	param(bool, disable_display, false, 0400) \
+ 	param(bool, verbose_state_checks, true, 0400) \
+-	param(bool, nuclear_pageflip, false, 0400) \
++	param(bool, nuclear_pageflip, true, 0400) \
+ 	param(bool, enable_dp_mst, true, 0600) \
+-	param(int, enable_fbc, -1, 0600) \
++	param(int, enable_fbc, 1, 0600) \
+ 	param(int, enable_psr, -1, 0600) \
+ 	param(int, enable_panel_replay, -1, 0600) \
+ 	param(bool, psr_safest_params, false, 0400) \

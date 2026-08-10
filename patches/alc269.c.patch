@@ -1,0 +1,61 @@
+# Gorilla Unleashed -- sound/hda/codecs/realtek/alc269.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/alc269.c.patch
+# Rationale: docs/alc269.c.md
+# +27 / -1 lines
+--- a/sound/hda/codecs/realtek/alc269.c
++++ b/sound/hda/codecs/realtek/alc269.c
+@@ -4155,6 +4155,7 @@
+ 	ALC236_FIXUP_HP_DMIC,
+ 	ALC256_FIXUP_HONOR_MRB_XXX_M1020_AUDIO,
+ 	ALC245_FIXUP_HP_ENVY_X360_15_FH0XXX,
++	ALC269_FIXUP_VAIO_EAPD_5DB,
+ };
+ 
+ /* A special fixup for Lenovo C940 and Yoga Duet 7;
+@@ -4191,11 +4192,36 @@
+ 	__snd_hda_apply_fixup(codec, id, action, 0);
+ }
+ 
++static void alc269_fixup_vaio_eapd_5db(struct hda_codec *codec,
++                                  const struct hda_fixup *fix, int action)
++{
++        u32 caps;
++        if (action != HDA_FIXUP_ACT_PRE_PROBE)
++                return;
++        static hda_nid_t nids[] = { 0x14, 0x21 };
++        int i;
++        for (i = 0; i < 2; i++) {
++                caps = query_amp_caps(codec, nids[i], HDA_OUTPUT);
++                if (caps) {
++                        caps &= ~AC_AMPCAP_OFFSET;
++                        caps |= (0x14 << AC_AMPCAP_OFFSET_SHIFT); /* GORILLA: Balanced 0x14 offset override */
++                        snd_hda_override_amp_caps(codec, nids[i], HDA_OUTPUT, caps);
++                }
++        }
++        codec_info(codec, "ALC269: VAIO EAPD (+5.5dB balanced offset) unleashed!\n");
++}
++
+ static const struct hda_fixup alc269_fixups[] = {
+ 	[ALC269_FIXUP_GPIO2] = {
+ 		.type = HDA_FIXUP_FUNC,
+ 		.v.func = alc_fixup_gpio2,
+ 	},
++	[ALC269_FIXUP_VAIO_EAPD_5DB] = {
++		.type = HDA_FIXUP_FUNC,
++		.v.func = alc269_fixup_vaio_eapd_5db,
++		.chained = true,
++		.chain_id = ALC269_FIXUP_SONY_VAIO
++	},
+ 	[ALC269_FIXUP_SONY_VAIO] = {
+ 		.type = HDA_FIXUP_PINCTLS,
+ 		.v.pins = (const struct hda_pintbl[]) {
+@@ -7931,7 +7957,7 @@
+ static const struct hda_quirk alc269_fixup_vendor_tbl[] = {
+ 	SND_PCI_QUIRK_VENDOR(0x1025, "Acer Aspire", ALC271_FIXUP_DMIC),
+ 	SND_PCI_QUIRK_VENDOR(0x103c, "HP", ALC269_FIXUP_HP_MUTE_LED),
+-	SND_PCI_QUIRK_VENDOR(0x104d, "Sony VAIO", ALC269_FIXUP_SONY_VAIO),
++	SND_PCI_QUIRK_VENDOR(0x104d, "Sony VAIO", ALC269_FIXUP_VAIO_EAPD_5DB),
+ 	SND_PCI_QUIRK_VENDOR(0x17aa, "Lenovo XPAD", ALC269_FIXUP_LENOVO_XPAD_ACPI),
+ 	SND_PCI_QUIRK_VENDOR(0x19e5, "Huawei Matebook", ALC255_FIXUP_MIC_MUTE_LED),
+ 	{}

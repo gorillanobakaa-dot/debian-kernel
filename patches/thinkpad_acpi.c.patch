@@ -1,0 +1,19 @@
+# Gorilla Unleashed -- drivers/platform/x86/lenovo/thinkpad_acpi.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/thinkpad_acpi.c.patch
+# Rationale: docs/thinkpad_acpi.c.md
+# +2 / -3 lines
+--- a/drivers/platform/x86/lenovo/thinkpad_acpi.c
++++ b/drivers/platform/x86/lenovo/thinkpad_acpi.c
+@@ -10706,9 +10706,8 @@
+ 	/* Ensure initial values are correct */
+ 	dytc_profile_refresh();
+ 
+-	/* Workaround for https://bugzilla.kernel.org/show_bug.cgi?id=216347 */
+-	if (dytc_capabilities & BIT(DYTC_FC_PSC))
+-		dytc_profile_set(NULL, PLATFORM_PROFILE_BALANCED);
++	/* GORILLA: Force performance thermal profile on boot for maximum power limits */
++	dytc_profile_set(NULL, PLATFORM_PROFILE_PERFORMANCE);
+ 
+ 	return 0;
+ }

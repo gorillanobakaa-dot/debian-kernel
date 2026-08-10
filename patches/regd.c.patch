@@ -1,0 +1,62 @@
+# Gorilla Unleashed -- drivers/net/wireless/ath/regd.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/regd.c.patch
+# Rationale: docs/regd.c.md
+# +21 / -6 lines
+--- a/drivers/net/wireless/ath/regd.c
++++ b/drivers/net/wireless/ath/regd.c
+@@ -290,7 +290,13 @@
+ 
+ static void ath_force_no_ir_chan(struct ieee80211_channel *ch)
+ {
+-	ch->flags |= IEEE80211_CHAN_NO_IR;
++	/* GORILLA UNLEASHED: never force NO_IR at the ath9k layer. This is the
++	 * "other half" of the deregulation — the cfg80211 core strip (reg.c)
++	 * is undone here in stock ath9k, which re-stamps NO_IR on ch12/13 and
++	 * DFS. We complete the strip so channels stay transmit-capable in ANY
++	 * regdomain (Japan ch14, DFS/indoor 5 GHz, etc.). Rationale + why:
++	 * see docs/regd.c.md + YOUR_KERNEL_EXPLAINED.md. */
++	ch->flags |= 0 /* was: IEEE80211_CHAN_NO_IR */;
+ }
+ 
+ static void ath_force_no_ir_freq(struct wiphy *wiphy, u16 center_freq)
+@@ -428,8 +434,9 @@
+ 		 *   do not allow AP mode
+ 		 */
+ 		if (!(ch->flags & IEEE80211_CHAN_DISABLED))
+-			ch->flags |= IEEE80211_CHAN_RADAR |
+-				     IEEE80211_CHAN_NO_IR;
++			ch->flags |= 0 /* GORILLA UNLEASHED: was IEEE80211_CHAN_RADAR |
++				     IEEE80211_CHAN_NO_IR — 5 GHz DFS/indoor channels
++				     stay usable in any regdomain (see docs/regd.c.md) */;
+ 	}
+ }
+ 
+@@ -474,8 +481,13 @@
+ {
+ 	u16 country_code;
+ 
+-	if (request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
+-	    !ath_is_world_regd(reg))
++	/* GORILLA UNLEASHED: was "reject only if we are NOT already in a world
++	 * regdomain" -- which is precisely backwards for us: sitting in world
++	 * regd is the state we want PRESERVED, yet stock code treats it as the
++	 * one case where an AP may overwrite it. Refuse every country-IE hint.
++	 * Redundant behind the cfg80211 strip in reg.c (no such request should
++	 * ever reach here now); kept so the driver is safe on its own. */
++	if (request->initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE)
+ 		return -EINVAL;
+ 
+ 	country_code = ath_regd_find_country_by_name(request->alpha2);
+@@ -649,7 +661,10 @@
+ 		 * saved on the wiphy orig_* parameters
+ 		 */
+ 		regd = ath_world_regdomain(reg);
+-		wiphy->regulatory_flags |= REGULATORY_COUNTRY_IE_FOLLOW_POWER;
++		/* GORILLA UNLEASHED: stock ath explicitly OPTS IN to letting a
++		 * country IE dictate TX power. We do not. Dropping this flag is
++		 * the ath-side half of the cfg80211 power change in reg.c. */
++		wiphy->regulatory_flags |= 0 /* was: REGULATORY_COUNTRY_IE_FOLLOW_POWER */;
+ 	} else {
+ 		/*
+ 		 * This gets applied in the case of the absence of CRDA,

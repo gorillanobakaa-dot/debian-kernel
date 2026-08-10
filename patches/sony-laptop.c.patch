@@ -1,0 +1,21 @@
+# Gorilla Unleashed -- drivers/platform/x86/sony-laptop.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/sony-laptop.c.patch
+# Rationale: docs/sony-laptop.c.md
+# +7 / -0 lines
+--- a/drivers/platform/x86/sony-laptop.c
++++ b/drivers/platform/x86/sony-laptop.c
+@@ -2235,6 +2235,13 @@
+ 	}
+ 	th_handle->mode = ret;
+ 
++	/* GORILLA: Force performance thermal profile on boot if supported (bit 1 is set in profiles mask) */
++	if (th_handle->profiles & 0x02) {
++		if (sony_nc_thermal_mode_set(2) == 0)
++			pr_info("sony-laptop: Forced performance thermal profile on boot\n");
++	}
++
++
+ 	sysfs_attr_init(&th_handle->profiles_attr.attr);
+ 	th_handle->profiles_attr.attr.name = "thermal_profiles";
+ 	th_handle->profiles_attr.attr.mode = S_IRUGO;

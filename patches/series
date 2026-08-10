@@ -1,0 +1,17 @@
+# Apply in this order from the kernel source root:
+#   while read -r p; do [ "${p#\#}" = "$p" ] || continue; \
+#       patch -p1 < "patches/$p"; done < patches/series
+alc269.c.patch
+btcoex.c.patch
+dell-pc.c.patch
+gpio.c.patch
+hw.c.patch
+init.c.patch
+intel_display_params.h.patch
+mlme.c.patch
+reg.c.patch
+regd.c.patch
+sony-laptop.c.patch
+tcp.c.patch
+tcp.h.patch
+thinkpad_acpi.c.patch

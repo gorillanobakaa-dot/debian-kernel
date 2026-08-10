@@ -1,0 +1,27 @@
+# Gorilla Unleashed -- net/mac80211/mlme.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/mlme.c.patch
+# Rationale: docs/mlme.c.md
+# +13 / -0 lines
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -3329,6 +3329,19 @@
+ 	if (ieee80211_is_s1g_beacon(mgmt->frame_control))
+ 		return 0;	/* TODO */
+ 
++	/* GORILLA UNLEASHED: an access point does not get to turn this radio
++	 * down. Stock mac80211 obeys both the 802.11h Power Constraint IE and
++	 * Cisco's DTPC IE, which on 2026-08-10 logged
++	 *   "Limiting TX power to 20 (20 - 0) dBm as advertised by <bssid>"
++	 * immediately after association. Returning 0 leaves link->ap_power_level
++	 * untouched, so __ieee80211_recalc_txpower() keeps the driver/regulatory
++	 * figure instead of the AP's. The radio is still bounded by hardware
++	 * calibration and by chan->max_power; this only removes the AP's vote.
++	 *
++	 * The code below is intentionally retained (unreachable) so the upstream
++	 * logic stays readable and easy to restore. Rationale: docs/regd.c.md. */
++	return 0;
++
+ 	if (country_ie &&
+ 	    (capab & cpu_to_le16(WLAN_CAPABILITY_SPECTRUM_MGMT) ||
+ 	     capab & cpu_to_le16(WLAN_CAPABILITY_RADIO_MEASURE))) {

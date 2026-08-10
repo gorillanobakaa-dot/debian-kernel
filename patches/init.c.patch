@@ -1,0 +1,34 @@
+# Gorilla Unleashed -- drivers/net/wireless/ath/ath9k/init.c
+# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Apply from the kernel source root:  patch -p1 < patches/init.c.patch
+# Rationale: docs/init.c.md
+# +3 / -3 lines
+--- a/drivers/net/wireless/ath/ath9k/init.c
++++ b/drivers/net/wireless/ath/ath9k/init.c
+@@ -43,7 +43,7 @@
+ module_param_named(debug, ath9k_debug, uint, 0);
+ MODULE_PARM_DESC(debug, "Debugging mask");
+ 
+-int ath9k_modparam_nohwcrypt;
++int ath9k_modparam_nohwcrypt = 1;
+ module_param_named(nohwcrypt, ath9k_modparam_nohwcrypt, int, 0444);
+ MODULE_PARM_DESC(nohwcrypt, "Disable hardware encryption");
+ 
+@@ -55,7 +55,7 @@
+ module_param_named(led_active_high, ath9k_led_active_high, int, 0444);
+ MODULE_PARM_DESC(led_active_high, "Invert LED polarity");
+ 
+-static int ath9k_btcoex_enable;
++static int ath9k_btcoex_enable = 1; /* GORILLA: forced ON */
+ module_param_named(btcoex_enable, ath9k_btcoex_enable, int, 0444);
+ MODULE_PARM_DESC(btcoex_enable, "Enable wifi-BT coexistence");
+ 
+@@ -265,7 +265,7 @@
+ 	if (!ah->curchan)
+ 		return;
+ 
+-	sc->cur_chan->txpower = 2 * ah->curchan->chan->max_power;
++	sc->cur_chan->txpower = MAX_COMBINED_POWER; /* GORILLA: Force Max TX power at init */
+ 	ath9k_ps_wakeup(sc);
+ 	ath9k_hw_set_txpowerlimit(ah, sc->cur_chan->txpower, false);
+ 	ath9k_cmn_update_txpow(ah, sc->cur_chan->cur_txpower,
