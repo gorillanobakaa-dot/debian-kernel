@@ -29,6 +29,43 @@ if [ ! -d "$TARGET_SOURCE" ]; then
     exit 1
 fi
 
+# ── PRE-FLIGHT — "the way we do things" (see BUILD_PREFLIGHT.md) ───────────────
+# Hard checks ABORT the build; soft checks warn. So no future build silently
+# skips ccache, builds in the vault, or ships broken.
+preflight() {
+    local fail=0
+    echo -e "\n🛫 PRE-FLIGHT CHECKS"
+    # HARD: never build in the vault (that is how the old vault got contaminated).
+    if printf '%s' "$TARGET_SOURCE" | grep -qi "Kernel.Vault.Do.Not.Delete"; then
+        echo "  ❌ ABORT: target is inside the VAULT. Build in kernel-build-workspace/, never the vault."
+        fail=1
+    else
+        echo "  ✅ target is the workspace, not the vault"
+    fi
+    # HARD: a pristine tarball must exist to diff against.
+    if ls "$(dirname "$SCRIPT_DIR")"/Kernel.Vault.Do.Not.Delete/linux-*.tar.xz >/dev/null 2>&1; then
+        echo "  ✅ pristine tarball present (diff baseline)"
+    else
+        echo "  ⚠  no pristine tarball found under the vault — verify patches against a clean source another way"
+    fi
+    # SOFT: ccache must be on for a fast build.
+    if command -v ccache >/dev/null 2>&1; then
+        echo "  ✅ ccache available ($(ccache -s 2>/dev/null | awk -F': ' '/Cache size/{print $2}'))"
+    else
+        echo "  ⚠  ccache NOT installed — full rebuild will be slow. apt install ccache"
+    fi
+    # SOFT: a fallback kernel should already be installed before we add another.
+    if [ "$(ls -1 /boot/vmlinuz-* 2>/dev/null | wc -l)" -ge 1 ]; then
+        echo "  ✅ $(ls -1 /boot/vmlinuz-* 2>/dev/null | wc -l) kernel(s) in /boot (fallback preserved on install)"
+    else
+        echo "  ⚠  no existing kernel in /boot — make sure you keep a known-good fallback"
+    fi
+    echo "  ℹ  recipe: KCFLAGS='-O3 -march=native -mtune=native -pipe', decontaminated injector, name ≤64 chars, output → Clean Output Binaries"
+    [ "$fail" -eq 0 ] || { echo "🛑 pre-flight FAILED — not building."; exit 1; }
+    echo "  🛫 pre-flight OK"
+}
+preflight
+
 # 1. Apply code patches using universal_freedom_installer.py
 echo -e "\n🚀 [Step 1/4] Applying custom source code patches..."
 python3 "$SCRIPT_DIR/universal_freedom_installer.py" "$TARGET_SOURCE"
@@ -63,13 +100,23 @@ LVERSION=$(python3 "$SCRIPT_DIR/kernel_build_namer.py" localversion \
              --tags unleashed gorilla forensic eapd sdr bbr) || exit 1
 
 export KCFLAGS="-O3 -march=native -mtune=native -pipe"
+# ccache: skip recompiling unchanged files across builds. Big win on the 2012
+# Ivy Bridge — a full rebuild goes from ~an hour to minutes when the cache is
+# warm. Auto-detected; harmless if ccache isn't installed (CC falls back to gcc).
+if command -v ccache >/dev/null 2>&1; then
+    CC_WRAP='CC=ccache gcc'
+    echo "  ccache:                ON ($(ccache -s 2>/dev/null | awk -F': ' '/Cache size/{print $2}'))"
+else
+    CC_WRAP=''
+    echo "  ccache:                not installed (compiling cold)"
+fi
 echo "  Optimizations enabled: $KCFLAGS"
 echo "  LOCALVERSION:          $LVERSION"
 echo "  CPUs utilized:        $(nproc)"
 echo "  Starting compilation..."
 
 # Capture the REAL compiler exit, not tee's (directive §2: never trust a piped exit).
-make -C "$TARGET_SOURCE" LOCALVERSION="${LVERSION}" -j"$(nproc)" bindeb-pkg KDEB_PKGVERSION="1"
+make -C "$TARGET_SOURCE" $CC_WRAP LOCALVERSION="${LVERSION}" -j"$(nproc)" bindeb-pkg KDEB_PKGVERSION="1"
 BUILD_RC=$?
 if [ "$BUILD_RC" -ne 0 ]; then
     echo "❌ Build FAILED (exit $BUILD_RC). Not moving artifacts."; exit "$BUILD_RC"

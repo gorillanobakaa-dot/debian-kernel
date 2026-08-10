@@ -1,0 +1,7 @@
+# Gorilla Unleashed — automatic I/O scheduler selection (ships with the kernel).
+# BFQ on SSD/flash: keeps the desktop responsive when a background job hammers
+# the disk (the Kingston DC600M is SATA, where BFQ beats 'none'). mq-deadline on
+# spinning rust. No user action required — udev applies this on every boot.
+ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="bfq"
+ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="1", ATTR{queue/scheduler}="mq-deadline"
+ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/scheduler}="none"
