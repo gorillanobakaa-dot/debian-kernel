@@ -77,7 +77,18 @@ fi
 
 echo -e "\n📦 [Step 5/5] Moving compiled binaries to the output directory..."
 PARENT_DIR="$(dirname "$TARGET_SOURCE")"
-DEST_DIR="$SCRIPT_DIR/output_binaries"
+# Deliver to the project's 'Clean Output Binaries' convention folder. Anchor to
+# the ACTUAL folder by walking up from this script's dir (find it wherever the
+# repo sits); if none exists yet, create it beside the repo. Override with OUT_DIR.
+find_out_dir() {
+    local d="$SCRIPT_DIR"
+    while [ "$d" != "/" ]; do
+        [ -d "$d/Clean Output Binaries" ] && { printf '%s' "$d/Clean Output Binaries"; return; }
+        d="$(dirname "$d")"
+    done
+    printf '%s' "$(dirname "$SCRIPT_DIR")/Clean Output Binaries"
+}
+DEST_DIR="${OUT_DIR:-$(find_out_dir)}"
 mkdir -p "$DEST_DIR"
 mv "$PARENT_DIR"/linux-*{.deb,.buildinfo,.changes} "$DEST_DIR/" 2>/dev/null || true
 # Strip redundant duplicated version + the '_1' KDEB_PKGVERSION tag, lowercase.
