@@ -2235,13 +2235,6 @@ static int sony_nc_thermal_setup(struct platform_device *pd)
 	}
 	th_handle->mode = ret;
 
-	/* GORILLA: Force performance thermal profile on boot if supported (bit 1 is set in profiles mask) */
-	if (th_handle->profiles & 0x02) {
-		if (sony_nc_thermal_mode_set(2) == 0)
-			pr_info("sony-laptop: Forced performance thermal profile on boot\n");
-	}
-
-
 	sysfs_attr_init(&th_handle->profiles_attr.attr);
 	th_handle->profiles_attr.attr.name = "thermal_profiles";
 	th_handle->profiles_attr.attr.mode = S_IRUGO;

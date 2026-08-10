@@ -65,33 +65,42 @@ the previous buzzing or distortion. The speakers are no longer at risk of physic
 
 ---
 
-#### ⚡ Upgrade 2 — Your CPU Stops Throttling Under Load (Sony VAIO)
-*The problem:* Sony programs the motherboard to sit in a "balanced" thermal mode by default.
-Under sustained load (gaming, compiling, video processing), the Embedded Controller reads the
-temperature, panics, and cuts the CPU speed in half — even if the fans could handle more. You
-paid for a full-speed CPU; Sony's code was only letting you use 50-70% of it.
+#### ⚡ Upgrade 2 — **REMOVED in Build 4**: forced Performance thermal mode
 
-*The fix:* We reprogrammed the Sony laptop driver to force **Performance mode** the moment the
-kernel boots. The fans spin proactively. The CPU runs at full speed.
+> **This patch has been deleted, on purpose.** `sony-laptop.c` is now byte-identical
+> to upstream and no longer appears in the patch set (13 patches, not 14).
 
-**Verified running** — this appears in the boot log on every start:
+*What it used to do:* force the Sony embedded controller into **Performance**
+thermal mode at every boot (`sony_nc_thermal_mode_set(2)`), so the fan ran eagerly
+from the moment the machine started.
+
+*Why it is gone:* that is a **server-shaped decision applied to a 2012 laptop.**
+There is no good reason for a portable machine to boot in performance mode. It
+costs fan noise permanently, it costs battery, and it costs processor life — to
+pre-empt throttling that may never happen. Measured on the reference VAIO the
+moment it was switched off, at idle:
+
+| Thermal mode | Package temp (idle) |
+|---|---|
+| performance (forced) | **54 °C** |
+| balanced (default) | **49 °C** |
+
+Five degrees, for nothing, all the time. On that machine the figure would be far
+worse without aftermarket **Honeywell PTM** thermal compound on the CPU — stock,
+it would sit near 89 °C under load.
+
+**Nothing is lost.** The firmware still exposes all three profiles, and the CPU
+governor (`schedutil`) ramps clocks under load by itself — that is a *different
+mechanism*, untouched by this change. Start balanced; unleash on demand:
+
+```bash
+cat /sys/devices/platform/sony-laptop/thermal_profiles   # balanced silent performance
+echo performance | sudo tee /sys/devices/platform/sony-laptop/thermal_control
 ```
-sony_laptop: sony-laptop: Forced performance thermal profile on boot
-```
-(`sony_nc_thermal_mode_set(2)`, guarded by a check that the firmware actually
-advertises the profile.)
 
-> **⚠️ Know the trade-off before you keep this.** This is a *thermal* profile in
-> Sony's embedded controller — separate from the CPU frequency governor — and it
-> makes the fan run more eagerly, permanently, on a machine that may be a decade
-> old. On the reference VAIO the owner found the constant fan noise worse than the
-> throttling it prevents. If that is you, the CPU governor (`schedutil`, which
-> this kernel already defaults to) handles load ramping perfectly well on its own,
-> and you can drop this patch without losing much.
->
-> "Measurably faster" was the original wording here. **Nothing was measured** —
-> no A/B compile or encode benchmark has ever been run. It is a reasonable
-> expectation, not a result.
+Make it stick across reboots only if you actually want it — a one-line
+`systemd-tmpfiles` rule or `rc.local` entry will do it. **The default should be
+sane; the extreme should be a choice.**
 
 ---
 

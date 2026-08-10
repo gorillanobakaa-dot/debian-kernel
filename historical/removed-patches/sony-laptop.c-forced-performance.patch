@@ -1,0 +1,33 @@
+# REMOVED in Build 4 (2026-08-10) — kept for the record, DO NOT re-apply.
+#
+# This forced the Sony embedded controller into Performance thermal mode at every
+# boot. It was removed because it is a server-shaped decision applied to a 2012
+# laptop: permanent fan noise, battery cost and processor wear, to pre-empt
+# throttling that may never occur.
+#
+# Measured at idle on the reference VAIO the moment it was disabled:
+#   performance (forced) = 54 C package     balanced (default) = 49 C package
+# Five degrees, continuously, for nothing. That machine only survives at all
+# because of aftermarket Honeywell PTM compound on the CPU; stock it would sit
+# near 89 C under load.
+#
+# Nothing was lost: the firmware still exposes balanced/silent/performance via
+#   /sys/devices/platform/sony-laptop/thermal_control
+# and the schedutil governor ramps clocks under load by a separate mechanism.
+# The default should be sane; the extreme should be a choice.
+--- a/drivers/platform/x86/sony-laptop.c
++++ b/drivers/platform/x86/sony-laptop.c
+@@ -2235,6 +2235,13 @@
+ 	}
+ 	th_handle->mode = ret;
+ 
++	/* GORILLA: Force performance thermal profile on boot if supported (bit 1 is set in profiles mask) */
++	if (th_handle->profiles & 0x02) {
++		if (sony_nc_thermal_mode_set(2) == 0)
++			pr_info("sony-laptop: Forced performance thermal profile on boot\n");
++	}
++
++
+ 	sysfs_attr_init(&th_handle->profiles_attr.attr);
+ 	th_handle->profiles_attr.attr.name = "thermal_profiles";
+ 	th_handle->profiles_attr.attr.mode = S_IRUGO;
