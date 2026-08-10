@@ -35,7 +35,19 @@ jobs:
           sudo apt-get install -y \
             build-essential libncurses-dev bison flex \
             libssl-dev libelf-dev bc git rsync curl xz-utils \
-            kmod cpio dpkg-dev debhelper python3
+            kmod cpio dpkg-dev debhelper python3 \
+            libdw-dev libzstd-dev dwarves zstd
+          # libdw-dev is a HARD build-dep of bindeb-pkg and was missing, so
+          # dpkg-checkbuilddeps aborted every single run at the compile step:
+          #   "Unmet build dependencies: libdw-dev:native"
+          # This repo has been advertising an auto-builder that never once
+          # produced a package. dwarves(pahole)+libzstd/zstd are needed for BTF
+          # generation and zstd-compressed packages respectively.
+          echo "--- build-dep sanity ---"
+          for p in libdw-dev libelf-dev libssl-dev dwarves; do
+            dpkg -s "$p" >/dev/null 2>&1 && echo "  ok   $p" \
+              || { echo "::error::$p failed to install"; exit 1; }
+          done
 
       # ── Step 3: Download upstream kernel source ───────────────────────────────
       - name: 🌐 Download Linux Kernel Source
