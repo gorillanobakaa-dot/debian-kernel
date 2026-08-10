@@ -46,30 +46,64 @@ jobs:
             "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KERNEL_VER}.tar.xz"
           tar -xf "linux-${KERNEL_VER}.tar.xz"
 
-      # ── Step 4: Apply Braveheart patches ─────────────────────────────────────
-      - name: 🩹 Apply Gorilla Braveheart Patches
+      # ── Step 3b: Prove the patch set still reproduces the shipped sources ────
+      # Cheap, offline, and it fails the build BEFORE compiling for an hour if a
+      # source file was edited without regenerating its patch.
+      - name: 🔍 Verify patch set integrity
+        run: |
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
+          python3 make_patches.py --check
+          TARBALL_PATH="./linux-${KERNEL_VER}.tar.xz" ./verify_patches.sh
+
+      # ── Step 4: Apply the source patches ─────────────────────────────────────
+      - name: 🩹 Apply Gorilla source patches
         run: |
           KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
           python3 universal_freedom_installer.py "./linux-${KERNEL_VER}"
+          # Verify the artifact, never the exit code (project directive §2).
+          n=$(grep -rl GORILLA "./linux-${KERNEL_VER}/net/wireless/reg.c" \
+                 "./linux-${KERNEL_VER}/net/mac80211/mlme.c" \
+                 "./linux-${KERNEL_VER}/drivers/net/wireless/ath/regd.c" | wc -l)
+          [ "$n" -eq 3 ] || { echo "::error::patches did not land (only $n/3 marked files)"; exit 1; }
+          echo "patched sources confirmed present"
 
       # ── Step 5: Apply custom kernel config ───────────────────────────────────
-      - name: ⚙️ Apply Custom Kernel Configuration
+      # NOTE: the injector is NOT optional. Without it CI produced a DIFFERENT
+      # kernel from every local build -- no EROFS, no forensics flags, nandsim
+      # built in, no CFG80211_REG_RELAX_NO_IR. A CI artifact that silently
+      # disagrees with the documented build is worse than no CI artifact.
+      - name: ⚙️ Apply custom kernel configuration + audited change-set
         run: |
           KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
           cp kernel.config "linux-${KERNEL_VER}/.config"
-          cd "linux-${KERNEL_VER}"
-          # Accept all defaults for any new config options
-          yes "" | make olddefconfig
+          python3 kernel_config_injector.py "./linux-${KERNEL_VER}"
+          make -C "linux-${KERNEL_VER}" olddefconfig
+          # Spot-check that the change-set survived olddefconfig.
+          for f in CONFIG_EROFS_FS=y CONFIG_IKCONFIG_PROC=y CONFIG_CFG80211_REG_RELAX_NO_IR=y; do
+            grep -q "^$f" "linux-${KERNEL_VER}/.config" \
+              || { echo "::error::$f missing after olddefconfig"; exit 1; }
+          done
+          echo "config change-set verified in .config"
 
       # ── Step 6: Compile the kernel ───────────────────────────────────────────
       - name: 🔥 Compile Kernel (Multi-threaded)
         run: |
           KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
-          TIMESTAMP=$(date +"%Y.%m.%d--%H.%M")
-          LVERSION="-unleashed.gorilla-+60db-bbr-fq-codel-${TIMESTAMP}"
+          # Name via the 64-char-guarded namer, NOT a hand-written string. The
+          # old hardcoded name still said "+60db" -- the King Kong audio hack that
+          # was replaced by the EAPD fixup in June -- so every CI artifact was
+          # advertising a feature the kernel had not contained for months.
+          # Fewer tags than a local build on purpose: the full set lands at
+          # exactly 64/64 chars, and a name with zero headroom breaks the moment
+          # anyone adds a tag or the timestamp format shifts. 51/64 leaves room.
+          LVERSION=$(python3 kernel_build_namer.py localversion \
+                       --base "${KERNEL_VER}" \
+                       --tags unleashed gorilla eapd bbr ci)
+          echo "LOCALVERSION: ${LVERSION}"
           cd "linux-${KERNEL_VER}"
+          # -O3 only: CI runners are not the target CPU, so -march=native here
+          # would produce binaries tuned for whatever hardware GitHub allocated.
           export KCFLAGS="-O3 -pipe"
-          # Note: CI runners don't support -march=native (cross-build context)
           make LOCALVERSION="${LVERSION}" -j$(nproc) bindeb-pkg KDEB_PKGVERSION="${KERNEL_VER}"
 
       # ── Step 7: Collect build output .deb packages ───────────────────────────

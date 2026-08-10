@@ -18,16 +18,55 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 VAULT="$(dirname "$HERE")/Kernel.Vault.Do.Not.Delete"
-TARBALL="$VAULT/linux-7.1.2.tar.xz"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
+
+KVER="7.1.2"
+SHA_EXPECT="37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f"
+URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KVER}.tar.xz"
 
 G=$'\033[32m'; R=$'\033[31m'; N=$'\033[0m'
 pass=0; fail=0
 
-[ -f "$TARBALL" ] || { echo "ABORT: $TARBALL not found"; exit 1; }
+# ── locate the pristine tarball ──────────────────────────────────────────────
+# Anyone who just cloned this repo has no vault, so search sensibly and offer to
+# fetch from kernel.org. The checksum is verified either way: a tarball that does
+# not match is refused outright rather than silently used (directive §3 — a wrong
+# baseline is exactly what produced this project's worst audit error).
+TARBALL=""
+for c in "${TARBALL_PATH:-}" "$HERE/linux-${KVER}.tar.xz" \
+         "$VAULT/linux-${KVER}.tar.xz" "$(dirname "$HERE")/linux-${KVER}.tar.xz"; do
+    [ -n "$c" ] && [ -f "$c" ] && { TARBALL="$c"; break; }
+done
+
+if [ -z "$TARBALL" ]; then
+    echo "No pristine linux-${KVER}.tar.xz found locally."
+    echo "  searched: \$TARBALL_PATH, $HERE, $VAULT"
+    if [ "${AUTO_FETCH:-}" = "1" ] || { [ -t 0 ] && \
+         { printf '  Download it from kernel.org (~150 MB)? [y/N] '; read -r a; [ "$a" = y ] || [ "$a" = Y ]; }; }; then
+        command -v curl >/dev/null || { echo "ABORT: curl not installed"; exit 1; }
+        echo "  fetching $URL"
+        curl -fL --progress-bar -o "$WORK/linux-${KVER}.tar.xz" "$URL" || { echo "ABORT: download failed"; exit 1; }
+        TARBALL="$WORK/linux-${KVER}.tar.xz"
+    else
+        echo
+        echo "Provide it instead with:"
+        echo "  TARBALL_PATH=/path/to/linux-${KVER}.tar.xz ./verify_patches.sh"
+        echo "  AUTO_FETCH=1 ./verify_patches.sh          # non-interactive download"
+        exit 1
+    fi
+fi
+
+SHA_ACTUAL="$(sha256sum "$TARBALL" | cut -d' ' -f1)"
 echo "tarball : $TARBALL"
-echo "sha256  : $(sha256sum "$TARBALL" | cut -c1-64)"
+echo "sha256  : $SHA_ACTUAL"
+if [ "$SHA_ACTUAL" != "$SHA_EXPECT" ]; then
+    echo "${R}ABORT${N}: checksum mismatch — this is NOT pristine linux-${KVER}."
+    echo "  expected $SHA_EXPECT"
+    echo "  Verifying against an unknown baseline proves nothing. Refusing."
+    exit 1
+fi
+echo "          ${G}✓ matches the published upstream checksum${N}"
 echo
 
 # Which files do we need out of the tarball?
