@@ -135,21 +135,56 @@ jobs:
             ## 🦍 Gorilla Unleashed Kernel Build
 
             Auto-built from commit `${{ github.sha }}` on `${{ github.ref_name }}`.
+            Every patch was verified against pristine upstream **before** this was
+            compiled — see the "Verify patch set integrity" step in the build log.
 
-            ### Install instructions:
-            Download the two `.deb` files below and run:
+            ### ⚠️ Read this first — keep your current kernel
+
+            Installing this does **not** remove your existing kernel, and you should
+            not remove it either. If this one misbehaves, reboot, hold **SHIFT**
+            (or tap **Esc**), choose **Advanced options**, and pick your previous
+            kernel. Nothing is lost and no reinstall is needed.
+
+            ### Install
+
             ```bash
-            sudo dpkg -i linux-headers-*.deb linux-image-*.deb
+            sudo dpkg -i linux-image-*.deb linux-headers-*.deb
             sudo reboot
             ```
 
-            ### What's included:
-            - Wi-Fi regulatory bypass (max TX power, no channel throttling)
-            - HT40 CCA override (maintains 40MHz width in noisy environments)
-            - TCP CWND scaled to 128 (fast-start for multi-gigabit links)
-            - TCP memory buffers raised to 1GB
-            - ALC269 audio latency fix (no more codec interrupt spikes)
-            - BBR + FQ-Codel congestion control enabled
-          files: release-artifacts/*.deb
+            Then check it:
+
+            ```bash
+            ./kernel_selftest.sh
+            ```
+
+            > **Do not install `linux-libc-dev`** if you see it anywhere. Those are
+            > userspace headers your distribution already manages, and replacing
+            > them with a custom build can confuse `apt`. Only the **image** and
+            > **headers** packages above are meant to be installed.
+
+            ### What's actually in it
+
+            - **Wi-Fi deregulation, all four layers** — restriction flags, the
+              Atheros re-stamp, the AP's 802.11d country IE, and the AP's 802.11h
+              power constraint. Your router no longer decides what your radio may do.
+            - **HT40 CCA override** — keeps 40 MHz width in noisy environments.
+            - **TCP**: BBR + fq_codel, initial congestion window raised to 128.
+            - **ALC269 EAPD fixup** — Sony VAIO speakers are no longer muffled by
+              the BIOS.
+            - **Forensic filesystem support** — EROFS (Android images), exFAT,
+              NTFS3, HFS+, and the rest.
+
+            **Honest limits.** This cannot make a radio transmit beyond its
+            factory-calibrated ceiling — no software can. Performance items are
+            design rationale, not benchmarks: no A/B measurement has been run.
+            See `docs/VERIFIED_MEASUREMENTS.md`, which lists explicitly what was
+            *not* measured.
+
+            CI builds use `-O3` only. Local builds add `-march=native`, which a
+            shared runner cannot do correctly.
+          files: |
+            release-artifacts/linux-image-*.deb
+            release-artifacts/linux-headers-*.deb
           draft: false
           prerelease: false
