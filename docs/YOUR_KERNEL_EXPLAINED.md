@@ -212,12 +212,154 @@ user never needs).
 
 ---
 
+## 7. The Wi-Fi unleashing — the one this kernel is named for
+
+```
+$ sudo iw reg get
+global
+country 00: DFS-UNSET
+	(2402 - 2472 @ 40), (N/A, 20), (N/A)
+	(2474 - 2494 @ 20), (N/A, 20), (N/A), NO-OFDM, PASSIVE-SCAN
+```
+
+The two characters that matter are **`country 00`**. That means *world* — no
+country's rulebook is being applied to your radio.
+
+🧸 **Plain English:** your Wi-Fi card is a radio, and radios are regulated
+differently in every country. Normally Linux works out which country you're in
+and applies that rulebook — which channels you may use, how loud you may
+transmit. Sounds sensible. Here's the part most people never find out: **it often
+works that out by asking your router.** Your router broadcasts a little slip
+saying "we're in Great Britain," and a stock kernel simply believes it.
+
+This kernel doesn't. It reads the slip and ignores it. **You own the laptop; your
+router doesn't get a vote on what your hardware is allowed to do.**
+
+You can watch this happening. If a router near you is advertising a country, the
+self-test in section 8 will literally tell you it saw the claim and ignored it:
+
+```
+PASS  regulatory domain is world (00) — no country is restricting you
+PASS  an access point advertises 'Country: GB' and we IGNORED it
+PASS  channel 14 (Japan) is enabled — normally blocked outside Japan
+```
+
+**And no — you are not a hacker yet.** You just told your own laptop to stop
+taking instructions from a stranger's router. That is the whole trick.
+
+Why anyone would want this: channel 14 only exists in Japan. Several 5 GHz
+channels are indoor-only in Europe and fine elsewhere. If you travel, a card that
+half-works because it guessed the wrong country is a **bug**, not a safety
+feature. This kernel hands that judgement to you.
+
+💻 **FACT.** Four separate layers re-impose regulatory limits, and all four are
+cut: (1) `map_regdom_flags()` + `handle_channel*()` in `net/wireless/reg.c` —
+restriction flags and `CHAN_DISABLED`; (2) `ath_force_no_ir_chan()` +
+`ath_reg_apply_radar_flags()` in `drivers/net/wireless/ath/regd.c` — the Atheros
+driver re-stamping what the core just stripped; (3)
+`__reg_process_hint_country_ie()` in `reg.c` — the AP's 802.11d country IE, cut in
+**cfg80211** rather than in `ath` so it covers every driver including the
+rt2800usb ALFA adapters; (4) `ieee80211_handle_pwr_constr()` in
+`net/mac80211/mlme.c` — the AP's 802.11h power-constraint and Cisco DTPC IEs.
+Plus `CONFIG_CFG80211_REG_RELAX_NO_IR=y`.
+
+💻 **ASSESSMENT.** This does **not** and **cannot** make your radio transmit
+beyond its physical capability — the ceiling is burned into the card's EEPROM
+calibration at the factory and no software raises it. On this VAIO's AR9485 that
+real ceiling is **17 dBm**. (If you ever saw it report 20 dBm, that was a
+regulatory *table* value the silicon could never actually reach — see
+`case-study-txpower-drop.md`, which is worth reading purely as an example of how
+to tell a real regression from a number that merely moved.) What changes is
+**who decides**, not how loud the radio can physically shout.
+
+💻 **MITIGATION / your responsibility.** Radio rules exist partly for real
+reasons — chiefly not sitting on top of weather radar. Unleashing the card moves
+that judgement from a lookup table to **you**. Use channels that are legal and
+sensible where you actually are. We say this once, plainly, and then trust you:
+the kernel is a tool, and the operator is accountable for how it's pointed. If
+you want the stock behaviour back, boot the standard build — the deregulation is
+specific to the Unleashed one.
+
+---
+
+## 8. One command that checks all of it
+
+You don't have to take any of this on faith, and you don't need us:
+
+```
+$ ./kernel_selftest.sh
+```
+
+It reads — **never changes** — your system, and prints a plain-English PASS/FAIL
+for everything in this guide. Real output from the machine this was written on:
+
+```
+  PASS  kernel taint flag is 0 (nothing proprietary or forced loaded)
+  PASS  4 kernels installed — you have a fallback if one won't boot
+  PASS  regulatory domain is world (00) — no country is restricting you
+  PASS  the VAIO EAPD speaker fix loaded
+  PASS  sda (SSD) uses BFQ — desktop stays responsive under disk load
+  PASS  TCP uses BBR — better on lossy/slow links than the default
+  PASS  CPU governor is 'schedutil' — scales with load, fan stays quiet
+  INFO  hottest sensor right now: 52.0°C (normal)
+
+  PASS 24   FAIL 0   SKIP 0
+```
+
+🧸 **A word about `SKIP`.** If a check says **SKIP**, it means the test *could not
+look* — a tool was missing, or it needed admin rights. **SKIP is not PASS.** We
+built it that way on purpose: "I checked and it's fine" and "I couldn't check"
+must never print the same word, because a tool that quietly turns "don't know"
+into "fine" is worse than no tool at all.
+
+**Nothing here needs setting up.** The disk scheduler rule, the network profile
+and the audio fix all ship with the kernel package and apply themselves at boot.
+This guide exists so you can *understand* your machine — not so you have to
+configure it.
+
+---
+
+## 9. If a new kernel doesn't boot — don't panic, and don't reinstall
+
+This is the section we most hope you never need, so it's the one we made
+impossible to get wrong.
+
+🧸 **Plain English:** installing this kernel **does not remove your old one.**
+Both sit in the boot menu. If a new kernel misbehaves:
+
+1. Restart the machine.
+2. As it starts, hold **SHIFT** (or tap **Esc**) to bring up the boot menu.
+3. Choose **"Advanced options"**, then pick the **previous** kernel in the list.
+4. Press Enter. You're back on the old one. Nothing was lost.
+
+That's it. No reinstall, no live USB, no reformatting. **A kernel that won't boot
+is an inconvenience, not a disaster** — as long as you keep the old one, which is
+why the installer never deletes it and why the self-test warns you if you're ever
+down to a single kernel.
+
+If the screen fills with fast-scrolling text on the way up: that's just the kernel
+being chatty, **it is not an error and nothing is broken.** You can quiet it by
+removing `ignore_loglevel` from `GRUB_CMDLINE_LINUX_DEFAULT` in
+`/etc/default/grub` and running `sudo update-grub`.
+
+---
+
 ## Maintainer note (skip if you're just here to learn)
 
-- **Turn BFQ on for the SATA SSD** (it's compiled, just not selected):
-  `/etc/udev/rules.d/60-io-scheduler.rules` should set
-  `ACTION=="add|change", KERNEL=="sd[a-z]", ATTR{queue/rotational}=="0", ATTR{queue/scheduler}="bfq"`
-  then `sudo udevadm control --reload && sudo udevadm trigger`.
-- Everything in this guide is verifiable with `zcat /proc/config.gz | grep <FLAG>`.
+- **BFQ now applies itself.** `/etc/udev/rules.d/60-io-scheduler.rules` ships with
+  the kernel and selects `bfq` for non-rotational `sd*`, `mq-deadline` for
+  rotational, `none` for NVMe — on every boot, no user action. (Earlier revisions
+  of this note asked the reader to create that rule by hand; that was a gap, and
+  the standing rule is that **most users will not have an agent walking them
+  through anything**, so anything requiring manual setup is a bug in the package,
+  not a step for the docs.)
+- Everything in this guide is verifiable with `zcat /proc/config.gz | grep <FLAG>`,
+  or in one shot with `./kernel_selftest.sh`.
 - Keep the previous known-good kernel installed. If a new build won't boot, pick
-  the older one in the GRUB menu — no reinstall needed.
+  the older one in the GRUB menu — no reinstall needed (section 9).
+- `PROC_KCORE` is ON in the personal/dev build and deliberately **dropped from the
+  public build**; `IKCONFIG_PROC` and a tuned `MAGIC_SYSRQ` bitmask are kept in
+  both. Rationale in the project `CLAUDE.md`.
+- Per-patch reasoning lives beside this file: `reg.c.md`, `regd.c.md`, `mlme.c.md`,
+  `hw.c.md`, `alc269.c.md`, `tcp.h.md`, and the method write-up
+  `case-study-txpower-drop.md`.
