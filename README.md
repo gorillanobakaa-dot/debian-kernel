@@ -271,7 +271,7 @@ Your Wi-Fi card is physically capable of broadcasting much louder and using wide
 
 #### 🔊 Part 2: Realtek Audio Lag Annihilation (3 Tweaks)
 Sound cards try to save power by going to sleep, which causes popping, crackling, and latency:
-13. **King Kong Audio Roar**: We bypassed the default software gain limits on the Sony VAIO headphone and speaker jacks, unlocking a massive audio boost up to +60dB.
+13. **VAIO Speaker Un-muffling**: Sony's BIOS leaves the ALC269's amplifier pins under-driven, so the speakers sound quiet and flat. We apply a small, targeted amplifier-offset fixup (`ALC269_FIXUP_VAIO_EAPD_5DB`) that restores headroom while keeping your volume slider linear across its whole range. *(This replaced an earlier "+60dB King Kong" override that was loud, buzzy, made the slider useless and risked the speaker cones. That hack is **not** in this kernel — see [`docs/alc269.c.md`](docs/alc269.c.md).)*
 14. **System Interrupt Suppression**: Every time the audio card changes power states, it interrupts the CPU. We stabilized the audio routing to stop these interrupt spikes, eliminating micro-stutters.
 15. **VAIO Pin Grounding**: We grounded unused microphone line pins to stop electrical background hiss and static noise from leaking into your headphones.
 
@@ -330,12 +330,24 @@ This repository contains 8 patched source files and a compiler-optimized kernel 
   - Set `ath9k_btcoex_enable = 1;` to force-enable coexistence routines.
   - Sets `sc->cur_chan->txpower = MAX_COMBINED_POWER;` at initialization.
 
-#### 6. Realtek Audio Quirk: "King Kong Roar" — [`sound/hda/codecs/realtek/alc269.c`](alc269.c)
-* **What we did:** Added custom PCI vendor hardware quirk `ALC269_FIXUP_KING_KONG`.
+#### 6. Realtek Audio Quirk: VAIO EAPD — [`sound/hda/codecs/realtek/alc269.c`](alc269.c)
+* **What we did:** Added the PCI vendor quirk `ALC269_FIXUP_VAIO_EAPD_5DB`.
 * **Details:**
-  - Registers `ALC269_FIXUP_KING_KONG` quirk for Sony VAIO sub-vendor ID (`0x104d`).
-  - Implements `alc269_fixup_king_kong()` to override output amplifier caps (`query_amp_caps`, clears `AC_AMPCAP_OFFSET`, sets `0x04 << AC_AMPCAP_OFFSET_SHIFT`, and applies `snd_hda_override_amp_caps`) on node pins `0x14` and `0x21` to boost headroom by +60dB.
-  - Chains to `ALC269_FIXUP_SONY_VAIO` (which sets Pin 0x19 to `PIN_VREFGRD`), which stabilizes codec power states, grounds micro-lines, and prevents high-priority hardware CPU interrupt spikes.
+  - Registers the quirk for the Sony VAIO sub-vendor ID (`0x104d`).
+  - Overrides the output amplifier offset on node pins `0x14` and `0x21` via
+    `snd_hda_override_amp_caps()`, restoring headroom the BIOS leaves unused
+    while keeping the ALSA slider linear.
+  - Chains `ALC269_FIXUP_SONY_VAIO` (sets pin `0x19` to `PIN_VREFGRD`), which
+    grounds the unused mic line and reduces background hiss.
+  - Confirm it loaded: `journalctl -b -k | grep "VAIO EAPD"`.
+
+> **⚠️ Corrected 2026-08-10.** This section previously described a quirk named
+> `ALC269_FIXUP_KING_KONG` and a function `alc269_fixup_king_kong()` giving
+> "+60dB". **Neither symbol exists in this kernel** — `grep -i king_kong alc269.c`
+> returns nothing. It was documentation describing code that was never shipped.
+> The real fixup is the EAPD offset above. The "+5.5 dB" figure used elsewhere is
+> the fixup's own **label**, not a measured gain: the offset is `0x14` (20 steps)
+> and the step→dB mapping has never been measured on this hardware.
 
 #### 7. TCP Timing Limits & Handshake Optimizations — [`include/net/tcp.h`](tcp.h)
 * **What we did:** Optimized TCP macros for high-speed, low-latency performance.
@@ -407,7 +419,7 @@ This kernel was developed and optimized in a structured, multi-phase engineering
   - `net/wireless/reg.c`: Global regulatory bypass (removed channel flags, DFS lockouts, regional bans)
   - `drivers/net/wireless/ath/ath9k/hw.c` & `init.c`: Atheros transmission power amplifier overrode to `MAX_COMBINED_POWER`, forced dynamic software-crypto offloading to prevent wake-from-sleep connection stalls
   - `drivers/net/wireless/ath/ath9k/btcoex.c` & `gpio.c`: Fixed Wi-Fi coexistence airtime weighting and priority stomping to protect throughput from Bluetooth interference
-  - `sound/hda/codecs/realtek/alc269.c`: Injected custom `KING_KONG_ROAR` quirk for Sony VAIO sub-vendor ID to bypass output gain caps (+60dB) and stabilize codec CPU interrupt spikes
+  - `sound/hda/codecs/realtek/alc269.c`: Added the `ALC269_FIXUP_VAIO_EAPD_5DB` quirk for the Sony VAIO sub-vendor ID — a targeted amplifier-offset fixup on pins `0x14`/`0x21`, plus mic-pin grounding. *(Not `KING_KONG_ROAR`/+60dB: that symbol has never existed in this kernel.)*
   - `include/net/tcp.h` & `net/ipv4/tcp.c`: Raised socket memory buffers to 16MB default/64MB max, boosted initial congestion window to 128 packets, and slashed RTO timeouts from 200ms to 10ms
 
 ---
@@ -418,14 +430,22 @@ The combination of the 27 specific tweaks applied across the kernel codebase and
 
 | Tweak Component | Technical Change | Real-Life User Impact |
 |---|---|---|
-| **Wi-Fi Range & Speed** | Strip DFS/Radar locks & force HT40 channel widths ([`reg.c`](reg.c), [`hw.c`](hw.c)) | Eliminates sudden Wi-Fi dropouts on 5GHz/2.4GHz DFS channels; maintains maximum connection speed in apartment complexes with high wireless noise. |
+| **Wi-Fi Range & Speed** | Strip DFS/Radar locks & force HT40 channel widths ([`reg.c`](reg.c), [`hw.c`](hw.c)) | Keeps 40 MHz width in noisy environments instead of dropping to 20 MHz. **Note:** the reference VAIO's AR9485 is 2.4 GHz-only silicon — it reports **0** five-GHz channels, so the DFS/5 GHz half of this applies only to 5 GHz-capable radios, not to that laptop. |
 | **Wi-Fi Connection Stability** | Offload cryptography to host CPU ([`init.c`](init.c)) | Fixes the common bug where Wi-Fi fails to reconnect after closing and reopening a laptop lid (suspend/resume cycle). |
 | **Airtime Dominance** | Bluetooth coexistence priority weighting ([`btcoex.c`](btcoex.c), [`gpio.c`](gpio.c)) | Prevents wireless internet speed from cutting in half when using Bluetooth headphones, keyboards, or mice. |
-| **Audio Loudness** | +60dB gain override ([`alc269.c`](alc269.c)) | Unlocks the true volume capacity of built-in speakers and high-impedance studio headphones on Sony VAIO systems. |
-| **Audio Smoothness** | Codec Pin Grounding & Interrupt Stabilization ([`alc269.c`](alc269.c)) | Eradicates annoying "pop" or "crackle" noises at the start/end of audio playback; suppresses micro-stutters during high CPU loads. |
-| **Network Throughput** | 16MB/64MB TCP socket buffer scaling ([`tcp.c`](tcp.c)) | Saturates Gigabit fiber-optic internet connections on single-threaded downloads, which are normally throttled to ~100-200Mbps by legacy Linux buffers. |
-| **Web Browsing Speed** | 128 Packet Initial Window & 100ms connection timeout ([`tcp.h`](tcp.h)) | Web pages load almost instantaneously; handshake latency is slashed by 90% when establishing new secure HTTP sessions. |
-| **Network Jitter Recovery** | 10ms minimum Retransmission Timeout ([`tcp.h`](tcp.h)) | Online gaming matches and voice calls experience zero perceptible stutter or "rubber-banding" during brief packets drops. |
+| **Audio Loudness** | `ALC269_FIXUP_VAIO_EAPD_5DB` amplifier-offset fixup ([`alc269.c`](alc269.c)) | Restores headroom Sony's BIOS leaves unused, so built-in speakers are no longer muffled — while the volume slider stays linear. **Not a +60dB override**; that hack was removed for risking the cones and is not in this kernel. |
+| **Audio Smoothness** | Mic-pin grounding via `PIN_VREFGRD` ([`alc269.c`](alc269.c)) | Grounds the unused microphone line, reducing background hiss bleeding into the output. |
+| **Network Throughput** | TCP socket buffers up to 64 MB (sysctl profile; [`tcp.c`](tcp.c)) | Lets a single stream keep more data in flight on high bandwidth-delay-product links, where the conservative defaults are the limit. |
+| **Web Browsing Speed** | `TCP_INIT_CWND` 128 & `TCP_TIMEOUT_INIT` 100ms ([`tcp.h`](tcp.h)) | Sends far more data in the first round trip, so small pages and TLS handshakes finish in fewer round trips. |
+| **Network Jitter Recovery** | `TCP_RTO_MIN` 10ms, down from 200ms ([`tcp.h`](tcp.h)) | Retransmits a lost packet far sooner, shortening the stall a dropped packet causes on calls and games. |
+
+> **⚠️ These are design rationale, not benchmarks.** No A/B measurement has ever
+> been run on this hardware. Earlier revisions of this table asserted specific
+> outcomes — "saturates Gigabit fiber", "pages load almost instantaneously",
+> "latency slashed by 90%", "zero perceptible stutter". **None of those was ever
+> measured**, and they have been replaced with what the change mechanically does.
+> [`docs/VERIFIED_MEASUREMENTS.md`](docs/VERIFIED_MEASUREMENTS.md) lists what was
+> measured and, explicitly, what was not.
 | **System Boot Time** | Monolithic driver integration & native compiler optimization (`-O3 -march=native`) | Slashes overall boot-to-desktop time by compiling drivers directly into the kernel core and optimizing execution instructions specifically for the host Intel processor. |
 | **Memory Responsiveness** | Multi-Gen LRU (`MGLRU`) & LZ4/zstd swap compression (`kernel.config`) | The computer stays snappy and does not lock up even when running out of RAM with dozens of browser tabs open. |
 
