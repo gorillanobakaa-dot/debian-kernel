@@ -46,37 +46,46 @@ if [ ! -f "$TARGET_SOURCE/.config" ]; then
     fi
 fi
 
-# 3. Inject mandatory optimization flags
-echo -e "\n💉 [Step 3/4] Injecting mandatory Gorilla optimization flags..."
-python3 "$SCRIPT_DIR/config_injector.py" "$TARGET_SOURCE"
+# 3. Inject the AUDITED Build-1 change-set (decontaminated injector)
+echo -e "\n💉 [Step 3/4] Injecting audited Gorilla config change-set..."
+python3 "$SCRIPT_DIR/kernel_config_injector.py" "$TARGET_SOURCE"
 make -C "$TARGET_SOURCE" olddefconfig
 
 # 4. Trigger the optimized GCC compilation package build
 echo -e "\n🛠️ [Step 4/4] Starting kernel compilation (bindeb-pkg)..."
-TIMESTAMP=$(date +"%Y.%m.%d--%H.%M")
-LVERSION="-unleashed.gorilla-eapd.5db-bbr-fq-codel-${TIMESTAMP}"
+# Safe, timestamped, 64-char-guarded LOCALVERSION (was a hand-tuned string with
+# no length guard — the old name was 63/64 chars, one from breaking).
+BASE_VER="7.1.2"
+# Feature tags = the DISTINCTIVE badge of this build (edit to taste; the namer
+# enforces the 64-char limit and drops trailing tags if needed).
+LVERSION=$(python3 "$SCRIPT_DIR/kernel_build_namer.py" localversion \
+             --base "$BASE_VER" \
+             --tags unleashed gorilla forensic eapd sdr bbr) || exit 1
 
 export KCFLAGS="-O3 -march=native -mtune=native -pipe"
 echo "  Optimizations enabled: $KCFLAGS"
-echo "  CPUs utilized:        4"
+echo "  LOCALVERSION:          $LVERSION"
+echo "  CPUs utilized:        $(nproc)"
 echo "  Starting compilation..."
 
-make -C "$TARGET_SOURCE" LOCALVERSION="${LVERSION}" -j4 bindeb-pkg KDEB_PKGVERSION="1"
+# Capture the REAL compiler exit, not tee's (directive §2: never trust a piped exit).
+make -C "$TARGET_SOURCE" LOCALVERSION="${LVERSION}" -j"$(nproc)" bindeb-pkg KDEB_PKGVERSION="1"
+BUILD_RC=$?
+if [ "$BUILD_RC" -ne 0 ]; then
+    echo "❌ Build FAILED (exit $BUILD_RC). Not moving artifacts."; exit "$BUILD_RC"
+fi
 
 echo -e "\n📦 [Step 5/5] Moving compiled binaries to the output directory..."
 PARENT_DIR="$(dirname "$TARGET_SOURCE")"
 DEST_DIR="$SCRIPT_DIR/output_binaries"
 mkdir -p "$DEST_DIR"
-
-# Move and clean up filenames to prevent redundant "7.1.2" tags
-for file in "$PARENT_DIR"/linux-*{.deb,.buildinfo,.changes}; do
-    [ -e "$file" ] || continue
-    base=$(basename "$file")
-    # Clean up redundant _7.1.2 from the image and headers
-    clean_name="${base/_7.1.2_amd64/_amd64}"
-    clean_name="${clean_name/_1_amd64/_amd64}"
-    mv "$file" "$DEST_DIR/$clean_name"
-done
+mv "$PARENT_DIR"/linux-*{.deb,.buildinfo,.changes} "$DEST_DIR/" 2>/dev/null || true
+# Strip redundant duplicated version + the '_1' KDEB_PKGVERSION tag, lowercase.
+python3 "$SCRIPT_DIR/kernel_build_namer.py" cleandeb --base "$BASE_VER" --dir "$DEST_DIR"
+# Verify the artifact exists (§2), don't just trust the success banner.
+ls -1 "$DEST_DIR"/linux-image-*.deb >/dev/null 2>&1 \
+    && echo "  verified: linux-image .deb present in $DEST_DIR" \
+    || { echo "❌ No linux-image .deb produced — build did not deliver."; exit 1; }
 
 echo -e "\n======================================================================"
 echo "✅ SUCCESS: Gorilla Unleashed Kernel 7.1.2 built successfully!"

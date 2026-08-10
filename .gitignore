@@ -9,3 +9,30 @@
 .DS_Store
 .idea/
 .vscode/
+
+# ── INTERNAL MATERIAL — NEVER PUBLISH (added 2026-08-09) ─────────────────────
+# Audit work, agent conversations, personal data. These live outside this repo,
+# but the patterns guard against accidental copies or a future repo re-layout.
+.code_review/
+KERNEL.BRAIN/
+Reports/
+wifi_verification/
+Do.not.touch.*/
+Kernel.Vault.Do.Not.Delete/
+kernel-build-workspace/
+Clean Output Binaries/
+.opencode/
+opencode.db*
+*.bak
+*.bak-*
+brain_payload*.json
+my.devices*
+PERSONAL_DEVICES*
+network_log*
+build_log*
+*.provenance.md
+GORILLA_INTEGRATED_WORKFLOW.md
+
+# Python bytecode
+__pycache__/
+*.pyc
