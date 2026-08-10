@@ -1,7 +1,18 @@
 # GORILLA UNLEASHED KERNEL 7.1.2 — PATCH REGISTRY MAP
 # Format: <filename> -> <destination_relative_path>
+#
+# ⚠ THIS FILE IS THE BUILD'S MEMORY. A patched file that is not listed here is
+# NOT reproducible: universal_freedom_installer.py copies only what this map
+# names, so an unlisted patch survives in the workspace and then vanishes the
+# first time anyone builds from a clean tree.
+# Learned the hard way 2026-08-10: regd.c was hand-patched for Build 2 and was
+# missing from this map. Build 2 shipped it; a clean rebuild would have dropped
+# it silently, with nothing failing and no warning printed.
+# ⇒ Patch a file, add it here in the SAME change. No exceptions.
 
 reg.c -> net/wireless/reg.c
+regd.c -> drivers/net/wireless/ath/regd.c
+mlme.c -> net/mac80211/mlme.c
 hw.c -> drivers/net/wireless/ath/ath9k/hw.c
 init.c -> drivers/net/wireless/ath/ath9k/init.c
 gpio.c -> drivers/net/wireless/ath/ath9k/gpio.c

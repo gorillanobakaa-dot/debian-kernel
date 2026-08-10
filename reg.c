@@ -1797,16 +1797,18 @@ static void handle_channel_single_rule(struct wiphy *wiphy,
 		chan->psd = reg_rule->psd;
 
 	if (chan->orig_mpwr) {
-		/*
-		 * Devices that use REGULATORY_COUNTRY_IE_FOLLOW_POWER
-		 * will always follow the passed country IE power settings.
-		 */
-		if (initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
-		    wiphy->regulatory_flags & REGULATORY_COUNTRY_IE_FOLLOW_POWER)
-			chan->max_power = chan->max_reg_power;
-		else
-			chan->max_power = min(chan->orig_mpwr,
-					      chan->max_reg_power);
+		/* GORILLA UNLEASHED: was min(orig_mpwr, max_reg_power), and above
+		 * that a branch letting a country IE dictate power outright. A
+		 * regulatory table may not push the radio BELOW its own calibrated
+		 * capability, so the hardware figure wins. max_reg_power is left
+		 * untouched as the advertised regulatory value.
+		 *
+		 * This CANNOT exceed what the silicon can do: the driver clamps to
+		 * EEPROM per-rate calibration afterwards (ath9k: power_limit in
+		 * hw.c). On the AR9485 -- whose own ceiling is already 20 dBm --
+		 * this is a no-op; it pays off on radios whose hardware maximum
+		 * exceeds the regulatory table's figure. */
+		chan->max_power = max(chan->orig_mpwr, chan->max_reg_power);
 	} else
 		chan->max_power = chan->max_reg_power;
 }
@@ -1913,15 +1915,18 @@ static void handle_channel_adjacent_rules(struct wiphy *wiphy,
 	}
 
 	if (chan->orig_mpwr) {
-		/* Devices that use REGULATORY_COUNTRY_IE_FOLLOW_POWER
-		 * will always follow the passed country IE power settings.
-		 */
-		if (initiator == NL80211_REGDOM_SET_BY_COUNTRY_IE &&
-		    wiphy->regulatory_flags & REGULATORY_COUNTRY_IE_FOLLOW_POWER)
-			chan->max_power = chan->max_reg_power;
-		else
-			chan->max_power = min(chan->orig_mpwr,
-					      chan->max_reg_power);
+		/* GORILLA UNLEASHED: was min(orig_mpwr, max_reg_power), and above
+		 * that a branch letting a country IE dictate power outright. A
+		 * regulatory table may not push the radio BELOW its own calibrated
+		 * capability, so the hardware figure wins. max_reg_power is left
+		 * untouched as the advertised regulatory value.
+		 *
+		 * This CANNOT exceed what the silicon can do: the driver clamps to
+		 * EEPROM per-rate calibration afterwards (ath9k: power_limit in
+		 * hw.c). On the AR9485 -- whose own ceiling is already 20 dBm --
+		 * this is a no-op; it pays off on radios whose hardware maximum
+		 * exceeds the regulatory table's figure. */
+		chan->max_power = max(chan->orig_mpwr, chan->max_reg_power);
 	} else {
 		chan->max_power = chan->max_reg_power;
 	}
@@ -2584,7 +2589,13 @@ static void handle_channel_custom(struct wiphy *wiphy,
 	if (chan->flags & IEEE80211_CHAN_PSD)
 		chan->psd = reg_rule->psd;
 
-	chan->max_power = chan->max_reg_power;
+	/* GORILLA UNLEASHED: see the note in handle_channel_single_rule. This
+	 * is the branch ath9k actually takes (REGULATORY_CUSTOM_REG -- shows as
+	 * "country 99" in `iw reg get`), so it is the one that sets the dBm
+	 * figure `iw phy info` reports per channel. */
+	chan->max_power = chan->orig_mpwr ?
+			  max(chan->orig_mpwr, chan->max_reg_power) :
+			  chan->max_reg_power;
 }
 
 static void handle_band_custom(struct wiphy *wiphy,
@@ -2852,8 +2863,21 @@ __reg_process_hint_country_ie(struct wiphy *wiphy,
 			return REG_REQ_IGNORE;
 		return REG_REQ_ALREADY_SET;
 	} else {
-		if (wiphy->regulatory_flags & REGULATORY_COUNTRY_IE_IGNORE)
-			return REG_REQ_IGNORE;
+		/* GORILLA UNLEASHED: an access point does not get to re-regulate
+		 * this radio. Upstream gates this on the per-driver opt-in flag
+		 * REGULATORY_COUNTRY_IE_IGNORE; we make it UNCONDITIONAL so it
+		 * covers every driver -- ath9k, rt2800usb (ALFA AWUS036NH), and
+		 * anything added later -- not just the ones that opt in.
+		 *
+		 * This is the exact path that, on 2026-08-10, logged
+		 *   "ath: regdomain 0x833a dynamically updated by country element"
+		 *   "ath: Country alpha2 being used: GB"
+		 * four seconds after associating, undoing the world-regdomain the
+		 * boot had correctly established. Rationale: docs/regd.c.md.
+		 *
+		 * Memory: reg_process_hint() frees the request on REG_REQ_IGNORE
+		 * via its out_free label, so this leaks nothing. */
+		return REG_REQ_IGNORE;
 	}
 
 	if (unlikely(!is_an_alpha2(country_ie_request->alpha2)))

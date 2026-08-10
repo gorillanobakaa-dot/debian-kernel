@@ -65,6 +65,17 @@ MANDATORY_FLAGS = {
     "CONFIG_NET_SCH_INGRESS": "y",
     "CONFIG_NET_SCH_HTB": "y",
 
+    # -- Wireless regulatory: the config half of the deregulation --
+    # CERTIFICATION_ONUS was already on; it is the gate that makes the relax
+    # options selectable ("the onus of regulatory certification is on you").
+    # REG_RELAX_NO_IR was left off, so the dependency was satisfied and the
+    # feature unused: it relaxes the no-initiate-radiation restriction when an
+    # interface is already associated on the channel — i.e. it stops the kernel
+    # forbidding transmit on channels a peer is demonstrably already using.
+    # Source-side counterparts live in reg.c / regd.c / mlme.c.
+    "CONFIG_CFG80211_CERTIFICATION_ONUS": "y",
+    "CONFIG_CFG80211_REG_RELAX_NO_IR": "y",
+
     # -- I/O: BFQ for the DC600M (effective via udev rule) --
     "CONFIG_IOSCHED_BFQ": "y",
     "CONFIG_BFQ_GROUP_IOSCHED": "y",
@@ -105,7 +116,18 @@ MANDATORY_FLAGS = {
 
     # -- Forensic filesystems: the EROFS GAP (AOSP) + raw-NAND dump mount --
     "CONFIG_EROFS_FS": "y",                # modern Android/AOSP system+vendor images
-    "CONFIG_MTD_NAND_NANDSIM": "y",        # mount a raw NAND flash dump
+
+    # nandsim is a MODULE on purpose — the one documented exception to the
+    # monolithic "=y" rule. That rule covers DRIVERS FOR HARDWARE WE USE;
+    # nandsim is not a driver, it is a per-case forensic INSTRUMENT whose
+    # geometry (first_id_byte/second_id_byte/parts/...) must match the dump
+    # being examined and is set at load time.
+    # Built in (=y, Builds 1-2) it self-instantiated at every boot: a permanent
+    # useless 128 MiB fake "NAND simulator partition 0" in /proc/mtd, six
+    # warning lines, three mtdblock nags — and, worse, unconfigurable, because
+    # built-in code takes its parameters only from the kernel cmdline at boot.
+    # As =m:  modprobe nandsim first_id_byte=0x2c second_id_byte=0xdc ...
+    "CONFIG_MTD_NAND_NANDSIM": "m",        # mount a raw NAND flash dump (load per case)
 
     # -- Promote proven-used to built-in (integrity: no .ko to swap) --
     "CONFIG_EFIVAR_FS": "y",               # loaded every boot (UEFI vars)

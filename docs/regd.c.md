@@ -70,3 +70,29 @@ where you actually are. The kernel now trusts you to know that.
 - **Verify at runtime** (do not assume from source): on a 5 GHz-capable card,
   `iw list` per-channel flags before/after, and confirm DFS channels lose the
   `no IR`/`radar detection` markers. Compiles clean (`make …/regd.o`, exit 0).
+
+---
+
+## Build 3 addendum (2026-08-10) — two more ath-side leashes
+
+Runtime evidence, not source reasoning, drove these. Booted on Build 2 the kernel
+still logged `ath: regdomain 0x833a dynamically updated by country element` and
+`Country alpha2 being used: GB` four seconds after associating. Two more sites:
+
+| Function | Stock behaviour | After patch |
+|---|---|---|
+| `ath_regd_init_wiphy()` | sets `REGULATORY_COUNTRY_IE_FOLLOW_POWER` — ath **opts in** to letting an AP's country IE dictate TX power | `\|= 0` — no opt-in |
+| `__ath_reg_dyn_country()` | rejects a country-IE hint *only if we are **not** already in a world regdomain* | rejects **every** country-IE hint |
+
+The second is worth dwelling on: stock logic treats "already in world regdomain"
+as the one case where an AP **may** overwrite our regulatory state. For this
+project that is exactly backwards — world regd is the state we want *preserved*.
+
+Both are redundant behind the Build 3 `reg.c` change (which stops the hint ever
+reaching the driver), and both are kept anyway so `regd.c` is correct standing
+alone. Belt and braces on the file that already fooled two audits.
+
+**Note the driver-coverage limit:** everything in this file is `ath`-only. The
+ALFA AWUS036NH is `rt2800usb` and gets none of it — which is precisely why the
+Build 3 country-IE strip was placed in cfg80211 (`reg.c`), where it covers every
+driver. See `mlme.c.md` and `reg.c.md`.
