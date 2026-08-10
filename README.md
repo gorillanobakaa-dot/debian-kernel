@@ -57,7 +57,7 @@ deafening), and risked permanently damaging your speaker cones.
 *New approach:* We replaced it with a surgical +5.5dB amplifier offset — just enough to push
 past Sony's BIOS muffling without sending dangerous voltage to the cones. Your volume slider
 now behaves normally across its full range. Quiet is quiet, loud is loud, and the speakers are
-safe. The microphone pin grounding (Tweak #27) is still applied, now handled cleanly through
+safe. The microphone pin grounding (Tweak #14) is still applied, now handled cleanly through
 the standard ALSA pin control system.
 
 **Real-world impact:** Music and videos sound fuller and louder at *all* volume levels without
@@ -72,11 +72,26 @@ temperature, panics, and cuts the CPU speed in half — even if the fans could h
 paid for a full-speed CPU; Sony's code was only letting you use 50-70% of it.
 
 *The fix:* We reprogrammed the Sony laptop driver to force **Performance mode** the moment the
-kernel boots. The fans spin proactively. The CPU runs at full speed. You get 100% of what you
-paid for.
+kernel boots. The fans spin proactively. The CPU runs at full speed.
 
-**Real-world impact:** Compile jobs, video encoding, and heavy multitasking are measurably
-faster. No more sudden slowdowns mid-task.
+**Verified running** — this appears in the boot log on every start:
+```
+sony_laptop: sony-laptop: Forced performance thermal profile on boot
+```
+(`sony_nc_thermal_mode_set(2)`, guarded by a check that the firmware actually
+advertises the profile.)
+
+> **⚠️ Know the trade-off before you keep this.** This is a *thermal* profile in
+> Sony's embedded controller — separate from the CPU frequency governor — and it
+> makes the fan run more eagerly, permanently, on a machine that may be a decade
+> old. On the reference VAIO the owner found the constant fan noise worse than the
+> throttling it prevents. If that is you, the CPU governor (`schedutil`, which
+> this kernel already defaults to) handles load ramping perfectly well on its own,
+> and you can drop this patch without losing much.
+>
+> "Measurably faster" was the original wording here. **Nothing was measured** —
+> no A/B compile or encode benchmark has ever been run. It is a reasonable
+> expectation, not a result.
 
 ---
 
@@ -105,15 +120,52 @@ built-in capacitors that protect data during power cuts — it does not need tho
 simultaneously. We also tuned when Linux flushes memory cache — instead of big system-freezing
 dump events, it now trickles data out in small, consistent amounts.
 
-**Real-world impact:** Raw read/write speeds are dramatically higher. No more mouse pointer
-freeze during heavy downloads or large file copies.
+**Verified active** — `findmnt -no OPTIONS /` reports `nobarrier` and `commit=60`,
+so the option is genuinely honoured by ext4 in this kernel (it parses both
+`barrier`/`nobarrier`).
+
+> **🛑 DO NOT copy this fstab onto a drive without power-loss protection.**
+>
+> `barrier=0` tells the filesystem to stop forcing the drive to flush its write
+> cache in order. That is safe on the reference **Kingston DC600M**, which has
+> **on-board capacitors (PLP)** that finish any in-flight write when power is cut.
+> On a normal consumer SSD or a USB drive, **there are no capacitors**, and a power
+> cut or hard reset can leave the filesystem corrupted — not one lost file, a
+> broken journal.
+>
+> If you do not know whether your drive has PLP, it does not. Leave barriers on:
+> drop `barrier=0` from `fstab.modified` and keep `noatime,commit=60`, which give
+> you most of the benefit with none of this risk.
+>
+> "Raw read/write speeds are dramatically higher" was the original claim.
+> **Nothing was measured** — no benchmark has been run before or after. The
+> mechanism is real; the magnitude is unknown.
 
 ---
 
-#### 🔧 Upgrade 5 — Performance Mode for ThinkPad and Dell Users
-The Sony thermal fix was extended to cover Lenovo ThinkPad and Dell laptop users. If you run
-this kernel on those machines, the same "always Performance mode" policy applies. Your CPU will
-never be strangled by a conservative factory preset.
+#### 🔧 Upgrade 5 — ThinkPad and Dell support: **CODE PRESENT, NOT COMPILED**
+
+> **⚠️ Corrected 2026-08-10 — this upgrade does not work, and never has.**
+>
+> The claim here was that the Sony thermal policy "was extended to cover Lenovo
+> ThinkPad and Dell laptop users" and that "the same policy applies" on those
+> machines. **It cannot.** The drivers are switched off in the shipped config:
+>
+> ```
+> # CONFIG_THINKPAD_ACPI is not set        ← in kernel.config AND /proc/config.gz
+> 0 CONFIG_DELL* options enabled
+> ```
+>
+> The patched `thinkpad_acpi.c` and `dell-pc.c` sources ship in this repo and are
+> real, but the code is never built, so it can never execute. This is
+> "intent that was never wired up" — the source was written, the config line was
+> never flipped, and the documentation described the intent as though it were the
+> outcome.
+>
+> It is left in place deliberately rather than deleted: the work is done and only
+> a config change stands between it and working. If you want it, enable
+> `CONFIG_THINKPAD_ACPI` / the `CONFIG_DELL_*` family and rebuild — then **verify
+> on the target machine** before believing this section.
 
 ---
 
@@ -252,13 +304,24 @@ In this kernel, we have completely cut those handcuffs. Your computer will now r
 
 ---
 
-### 🛠️ The 27 Crucial Upgrades (Explained Simply)
+### 🛠️ The 26 Crucial Upgrades (Explained Simply)
 
 #### 📡 Part 1: Atheros Wi-Fi & Regulatory Overrides (12 Tweaks)
-Your Wi-Fi card is physically capable of broadcasting much louder and using wider channels, but it is forced to be "polite." Here is how we unleashed it:
+Your Wi-Fi card is held back by regional rules and by instructions from your own
+router — not only by physics. Here is how we unleashed it.
+
+> **One honest correction up front.** An earlier version of this line claimed the
+> card "is physically capable of broadcasting much louder." **That is not true of
+> the reference AR9485.** Its factory-calibrated ceiling is **17 dBm**, and that is
+> what it already transmits at. No software raises a radio above its EEPROM
+> calibration. What these patches remove is the *permission* layer — which
+> channels you may use, and whether a router gets to turn you down — not a
+> physical throttle. On radios whose hardware maximum genuinely exceeds the
+> regulatory figure, the power patches do buy real headroom. See
+> [`docs/case-study-txpower-drop.md`](docs/case-study-txpower-drop.md).
 1. **Unlocking Regional Bans**: We stripped the regional code locks. Your card can now scan and broadcast on channels that are normally banned in your country.
 2. **Channel 14 Access**: We unlocked Channel 14, the rarest and cleanest channel in the 2.4GHz spectrum, which is normally locked down globally.
-3. **Bypassing Radar Locks (DFS)**: Normally, if your card hears a whisper of radar, it shuts down or throttles. We bypassed this, allowing you to use high-speed DFS channels without interruption.
+3. **Bypassing Radar Locks (DFS)**: Normally, if your card hears a whisper of radar, it shuts down or throttles. We bypassed this, allowing you to use DFS channels without interruption. **Applies to 5 GHz-capable radios only** — DFS channels are a 5 GHz thing, and the reference VAIO's AR9485 reports **zero** 5 GHz channels, so this does nothing on that laptop. It matters on the family builds and on USB adapters like the ALFA.
 4. **Active Scanning (No-IR Bypass)**: We unlocked active scanning on all channels, allowing your device to actively search for access points instead of waiting passively.
 5. **Enabling Wide Lanes (HT40/80/160/320)**: Regional constraints that disable wide frequency lanes (like 40MHz on 2.4GHz or 160/320MHz on 5/6GHz) are stripped, allowing maximum channel widths.
 6. **Ignoring Nearby Neighbors**: Normally, if your card hears a neighbor’s Wi-Fi router, it drops from the fast lane (40MHz) to the slow lane (20MHz) to prevent interference. We told the card to ignore neighbors and stay in the fast lane.
@@ -269,26 +332,34 @@ Your Wi-Fi card is physically capable of broadcasting much louder and using wide
 11. **WLAN Airtime Dominance**: Wi-Fi and Bluetooth share the same antenna. We configured the controller to give Wi-Fi 100% airtime priority over Bluetooth.
 12. **Bluetooth Coexistence Stomping**: If Wi-Fi and Bluetooth try to talk at the exact same millisecond, Wi-Fi "stomps" over the Bluetooth signal, ensuring your internet throughput never drops for accessories.
 
-#### 🔊 Part 2: Realtek Audio Lag Annihilation (3 Tweaks)
-Sound cards try to save power by going to sleep, which causes popping, crackling, and latency:
-13. **VAIO Speaker Un-muffling**: Sony's BIOS leaves the ALC269's amplifier pins under-driven, so the speakers sound quiet and flat. We apply a small, targeted amplifier-offset fixup (`ALC269_FIXUP_VAIO_EAPD_5DB`) that restores headroom while keeping your volume slider linear across its whole range. *(This replaced an earlier "+60dB King Kong" override that was loud, buzzy, made the slider useless and risked the speaker cones. That hack is **not** in this kernel — see [`docs/alc269.c.md`](docs/alc269.c.md).)*
-14. **System Interrupt Suppression**: Every time the audio card changes power states, it interrupts the CPU. We stabilized the audio routing to stop these interrupt spikes, eliminating micro-stutters.
-15. **VAIO Pin Grounding**: We grounded unused microphone line pins to stop electrical background hiss and static noise from leaking into your headphones.
+#### 🔊 Part 2: Realtek Audio (2 Tweaks)
+Sony's BIOS leaves this codec quieter than it needs to be, and an ungrounded mic
+line leaks hiss into the output. Both are fixed in one small fixup entry.
 
-#### 🚀 Part 3: High-Speed TCP Networking (12 Tweaks)
+> **Corrected 2026-08-10.** This part used to be titled "Lag Annihilation (3
+> Tweaks)" and opened by blaming codec power-saving for pops and crackle. The
+> `alc269.c` patch does **not** touch power management — that is a separate
+> `modprobe` setting (`snd_hda_intel.conf`), not part of this kernel change. The
+> old tweak #14, "System Interrupt Suppression", claimed the patch stopped CPU
+> interrupt spikes; **it does not, and it was describing the same mic-pin
+> grounding as #15 a second time.** Two real changes, not three.
+13. **VAIO Speaker Un-muffling**: Sony's BIOS leaves the ALC269's amplifier pins under-driven, so the speakers sound quiet and flat. We apply a small, targeted amplifier-offset fixup (`ALC269_FIXUP_VAIO_EAPD_5DB`) that restores headroom while keeping your volume slider linear across its whole range. *(This replaced an earlier "+60dB King Kong" override that was loud, buzzy, made the slider useless and risked the speaker cones. That hack is **not** in this kernel — see [`docs/alc269.c.md`](docs/alc269.c.md).)*
+14. **VAIO Pin Grounding**: The fixup chains `ALC269_FIXUP_SONY_VAIO`, which sets pin `0x19` to `PIN_VREFGRD` — grounding the unused microphone line so its electrical hiss stops leaking into your headphones. *(This is the only other thing the patch does. The old list counted it twice.)*
+
+#### 🚀 Part 3: High-Speed TCP Networking (12 Tweaks, #15–#26)
 Linux network settings were designed in the era of dial-up internet. We scaled the buffer pipes to match modern multi-gigabit fiber connections:
-16. **Firehose Startup (128 CWND)**: Instead of testing the connection slowly (sending 10 packets), we blast 128 packets of data instantly during the initial connection.
-17. **Hyper-Fast Recovery (10ms RTO)**: If a packet is lost, standard systems wait 200 milliseconds to retry. We slashed this to 10 milliseconds.
-18. **Unresponsive Host Fail-Fast**: We slashed the time limit for retrying dead connections from 2 minutes to 3 seconds.
-19. **Instant Handshake**: Slash initial connection timeout from 1 second to 100 milliseconds to connect to web servers instantly.
-20. **Rapid Delayed ACKs**: Slash acknowledgment delays to 20ms maximum to keep data flowing without pauses.
-21. **Instant Socket Recycling**: Slash the wait time to destroy dead sockets from 60 seconds to 1 second, keeping memory clean.
-22. **SYN Handshake Fail-Fast**: Limit initial connection request (SYN) retries to 3 attempts, freeing resources from dead-weight connections fast.
-23. **SYN-ACK Handshake Fail-Fast**: Limit connection confirmation (SYN-ACK) retries to 3 attempts, preventing the system from wasting time on dead routes.
-24. **Fail-Fast Linger**: Reduced TCP connection close retry attempts from 15 to 8 to clean up and close connections twice as fast.
-25. **Fast Keepalive Probes**: Slashed idle keepalive verification from 2 hours to 15 minutes to clear out dead routes.
-26. **Industrial-Sized Data Pipes**: We expanded the memory buffers for reading and writing data from a few kilobytes to 16 Megabytes (default) and 64 Megabytes (maximum).
-27. **Preventing Window Collapse**: We locked the initial transmission window clamp to 65,535 packets to prevent the system from shrinking your internet pipes during minor network jitters.
+15. **Firehose Startup (128 CWND)**: Instead of testing the connection slowly (sending 10 packets), we blast 128 packets of data instantly during the initial connection.
+16. **Hyper-Fast Recovery (10ms RTO)**: If a packet is lost, standard systems wait 200 milliseconds to retry. We slashed this to 10 milliseconds.
+17. **Unresponsive Host Fail-Fast**: We slashed the time limit for retrying dead connections from 2 minutes to 3 seconds.
+18. **Instant Handshake**: Slash initial connection timeout from 1 second to 100 milliseconds to connect to web servers instantly.
+19. **Rapid Delayed ACKs**: Slash acknowledgment delays to 20ms maximum to keep data flowing without pauses.
+20. **Instant Socket Recycling**: Slash the wait time to destroy dead sockets from 60 seconds to 1 second, keeping memory clean.
+21. **SYN Handshake Fail-Fast**: Limit initial connection request (SYN) retries to 3 attempts, freeing resources from dead-weight connections fast.
+22. **SYN-ACK Handshake Fail-Fast**: Limit connection confirmation (SYN-ACK) retries to 3 attempts, preventing the system from wasting time on dead routes.
+23. **Fail-Fast Linger**: Reduced TCP retransmission attempts (`TCP_RETR2`) from 15 to 8, so a genuinely dead connection is given up on sooner instead of retrying for minutes. *(Retries back off exponentially, so this is not a simple "twice as fast" — the earlier wording said that and it was wrong.)*
+24. **Fast Keepalive Probes**: Slashed idle keepalive verification from 2 hours to 15 minutes to clear out dead routes.
+25. **Industrial-Sized Data Pipes**: We expanded the memory buffers for reading and writing data from a few kilobytes to 16 Megabytes (default) and 64 Megabytes (maximum).
+26. **Raising the Window Ceiling**: `tp->snd_cwnd_clamp` is set to 65,535 in `tcp_init_sock()`. This is an **upper bound** on how large the congestion window may grow — raising it lets a fast connection scale up further than the default would allow. *(Corrected: the earlier text called this "Preventing Window Collapse" and said it stops the system shrinking your pipes during jitter. It does not — a clamp is a ceiling, not a floor, and congestion control still reduces the window on loss.)*
 
 ---
 
