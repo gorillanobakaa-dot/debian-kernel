@@ -36,3 +36,7 @@ GORILLA_INTEGRATED_WORKFLOW.md
 # Python bytecode
 __pycache__/
 *.pyc
+
+# dual-track precheck artifacts (regenerated on demand, overwritten per run)
+PRECHECK.md
+PRECHECK.json
