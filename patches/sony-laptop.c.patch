@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- drivers/platform/x86/sony-laptop.c
-# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)
+# Baseline: pristine linux-7.1.2 (sha256 37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f)
 # Apply from the kernel source root:  patch -p1 < patches/sony-laptop.c.patch
 # Rationale: docs/sony-laptop.c.md
 # +7 / -0 lines

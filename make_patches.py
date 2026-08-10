@@ -11,22 +11,79 @@ cannot see what we changed without diffing it yourself, and a reviewer cannot
 audit 330 KB of upstream mlme.c to find our 15 lines. These patches make every
 change visible.
 
-The baseline is the VAULT, which is verified byte-identical to the pristine
-linux-7.1.2 tarball. It is NEVER the *.orig_backup files -- those were taken from
-already-patched trees and produced a completely wrong audit conclusion once
-already (see docs/, and the KERNEL brain concept on .orig_backup impostors).
+THE BASELINE
+------------
+Resolved in this order: $BASELINE_DIR, the local vault (checked for GORILLA marks
+first), then a throwaway extraction from linux-7.1.2.tar.xz with its sha256
+verified. The tarball path is what lets this run on a bare clone and in CI, which
+have no vault.
+
+It is NEVER the *.orig_backup files. Those were taken from trees that had already
+been patched, and diffing against them produced a completely wrong audit
+conclusion -- the retracted "dropped 11 of 12 patches" finding. A baseline you
+have not proven is pristine is worse than no baseline, because it yields a
+confident wrong answer instead of an error.
 
 Usage:  python3 make_patches.py [--check]
         --check  regenerate into a temp dir and report drift, writing nothing
 """
-import subprocess, sys, pathlib, re, shutil, tempfile, os
+import subprocess, sys, pathlib, re, shutil, tempfile, os, atexit
 
 HERE   = pathlib.Path(__file__).resolve().parent
-VAULT  = pathlib.Path("/home/gorilla/Documents/Debian.Kernel.Work/"
-                      "Kernel.Vault.Do.Not.Delete/linux-7.1.2")
-TARBALL= VAULT.parent / "linux-7.1.2.tar.xz"
+KVER   = "7.1.2"
+SHA    = "37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f"
 OUT    = HERE / "patches"
 CHECK  = "--check" in sys.argv
+_TMP   = []   # temp dirs to clean up at exit
+atexit.register(lambda: [shutil.rmtree(d, ignore_errors=True) for d in _TMP])
+
+
+def find_tarball():
+    for c in (os.environ.get("TARBALL_PATH"),
+              HERE / f"linux-{KVER}.tar.xz",
+              HERE.parent / "Kernel.Vault.Do.Not.Delete" / f"linux-{KVER}.tar.xz",
+              HERE.parent / f"linux-{KVER}.tar.xz"):
+        if c and pathlib.Path(c).is_file():
+            return pathlib.Path(c)
+    return None
+
+
+def resolve_baseline(rels):
+    """Return a directory holding pristine 7.1.2 sources for `rels`.
+
+    Order: $BASELINE_DIR, the local vault, then a throwaway extraction from the
+    tarball. The tarball path exists so this works on a bare clone and in CI,
+    where there is no vault -- without it the --check drift gate could not run
+    anywhere but the maintainer's laptop.
+    """
+    env = os.environ.get("BASELINE_DIR")
+    if env and pathlib.Path(env).is_dir():
+        return pathlib.Path(env), f"$BASELINE_DIR ({env})"
+
+    vault = HERE.parent / "Kernel.Vault.Do.Not.Delete" / f"linux-{KVER}"
+    if vault.is_dir():
+        marks = subprocess.run(["grep", "-rl", "GORILLA", str(vault)],
+                               capture_output=True, text=True).stdout.strip()
+        if marks:
+            sys.exit("ABORT: the vault contains GORILLA marks -- it is NOT pristine.\n"
+                     "Re-extract it from the tarball before generating patches.\n" + marks[:400])
+        return vault, f"vault ({vault})  [0 GORILLA marks -- pristine]"
+
+    tb = find_tarball()
+    if not tb:
+        sys.exit(f"ABORT: no pristine baseline. Provide one of:\n"
+                 f"  BASELINE_DIR=/path/to/pristine/linux-{KVER}\n"
+                 f"  TARBALL_PATH=/path/to/linux-{KVER}.tar.xz\n"
+                 f"  or place linux-{KVER}.tar.xz beside this script.")
+    got = subprocess.run(["sha256sum", str(tb)], capture_output=True, text=True).stdout.split()[0]
+    if got != SHA:
+        sys.exit(f"ABORT: {tb} sha256 {got}\n  does not match pristine {SHA}\n"
+                 f"  A wrong baseline produces wrong patches. Refusing.")
+    tmp = pathlib.Path(tempfile.mkdtemp()); _TMP.append(tmp)
+    members = [f"linux-{KVER}/{r}" for r in rels]
+    subprocess.run(["tar", "-xJf", str(tb), "-C", str(tmp)] + members,
+                   check=True, stderr=subprocess.DEVNULL)
+    return tmp / f"linux-{KVER}", f"tarball extraction ({tb.name}, sha256 verified)"
 
 def registry():
     """filename -> path relative to the kernel source root."""
@@ -41,18 +98,9 @@ def registry():
             reg[m.group(1)] = m.group(2)
     return reg
 
-# ── sanity: the baseline must genuinely be pristine ──────────────────────────
-if not VAULT.is_dir():
-    sys.exit(f"ABORT: vault not found at {VAULT}")
-marks = subprocess.run(["grep", "-rl", "GORILLA", str(VAULT)],
-                       capture_output=True, text=True).stdout.strip()
-if marks:
-    sys.exit("ABORT: the vault contains GORILLA marks -- it is NOT pristine.\n"
-             "Re-extract it from the tarball before generating patches.\n" + marks[:400])
-print(f"baseline : {VAULT}  (0 GORILLA marks -- pristine)")
-print(f"tarball  : {TARBALL}  {'present' if TARBALL.exists() else 'MISSING'}")
-
 reg = registry()
+VAULT, how = resolve_baseline(sorted(reg.values()))
+print(f"baseline : {how}")
 print(f"registry : {len(reg)} file(s)\n")
 
 dest = pathlib.Path(tempfile.mkdtemp()) if CHECK else OUT
@@ -82,7 +130,7 @@ for fname, rel in sorted(reg.items()):
 
     header = (
         f"# Gorilla Unleashed -- {rel}\n"
-        f"# Baseline: pristine linux-7.1.2 (vault, verified against linux-7.1.2.tar.xz)\n"
+        f"# Baseline: pristine linux-{KVER} (sha256 {SHA})\n"
         f"# Apply from the kernel source root:  patch -p1 < patches/{fname}.patch\n"
         f"# Rationale: docs/{fname}.md\n"
         f"# +{plus} / -{minus} lines\n"
