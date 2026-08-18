@@ -1,0 +1,109 @@
+name: 🦍 Gorilla Unleashed — Kernel Build & Release
+
+# When does this run?
+# - On every push to main (so every time you upload new patches, it auto-builds)
+# - Manually from the GitHub Actions tab ("Run workflow" button)
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      kernel_version:
+        description: 'Kernel version to build (e.g. 7.0.9)'
+        required: false
+        default: '7.0.9'
+
+jobs:
+  build-kernel:
+    name: Build Linux ${{ github.event.inputs.kernel_version || '7.0.9' }} Unleashed
+    runs-on: ubuntu-latest
+
+    # This gives the workflow permission to create a GitHub Release
+    permissions:
+      contents: write
+
+    steps:
+
+      # ── Step 1: Checkout the repository ──────────────────────────────────────
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      # ── Step 2: Install build dependencies ───────────────────────────────────
+      - name: 📦 Install Kernel Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential libncurses-dev bison flex \
+            libssl-dev libelf-dev bc git rsync curl xz-utils \
+            kmod cpio dpkg-dev debhelper python3
+
+      # ── Step 3: Download upstream kernel source ───────────────────────────────
+      - name: 🌐 Download Linux Kernel Source
+        run: |
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.0.9' }}"
+          echo "Downloading linux-${KERNEL_VER}.tar.xz..."
+          curl -L -o "linux-${KERNEL_VER}.tar.xz" \
+            "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KERNEL_VER}.tar.xz"
+          tar -xf "linux-${KERNEL_VER}.tar.xz"
+
+      # ── Step 4: Apply Braveheart patches ─────────────────────────────────────
+      - name: 🩹 Apply Gorilla Braveheart Patches
+        run: |
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.0.9' }}"
+          python3 universal_freedom_installer.py "./linux-${KERNEL_VER}"
+
+      # ── Step 5: Apply custom kernel config ───────────────────────────────────
+      - name: ⚙️ Apply Custom Kernel Configuration
+        run: |
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.0.9' }}"
+          cp kernel.config "linux-${KERNEL_VER}/.config"
+          cd "linux-${KERNEL_VER}"
+          # Accept all defaults for any new config options
+          yes "" | make olddefconfig
+
+      # ── Step 6: Compile the kernel ───────────────────────────────────────────
+      - name: 🔥 Compile Kernel (Multi-threaded)
+        run: |
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.0.9' }}"
+          TIMESTAMP=$(date +"%Y.%m.%d--%H.%M")
+          LVERSION="-unleashed.gorilla-+60db-bbr-fq-codel-${TIMESTAMP}"
+          cd "linux-${KERNEL_VER}"
+          export KCFLAGS="-O3 -pipe"
+          # Note: CI runners don't support -march=native (cross-build context)
+          make LOCALVERSION="${LVERSION}" -j$(nproc) bindeb-pkg KDEB_PKGVERSION="${KERNEL_VER}"
+
+      # ── Step 7: Collect build output .deb packages ───────────────────────────
+      - name: 📦 Collect Debian Packages
+        run: |
+          mkdir -p release-artifacts
+          mv ../*.deb release-artifacts/ 2>/dev/null || mv *.deb release-artifacts/ 2>/dev/null || true
+          ls -lah release-artifacts/
+
+      # ── Step 8: Upload packages as GitHub Release ────────────────────────────
+      - name: 🚀 Create GitHub Release with .deb Packages
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ github.event.inputs.kernel_version || '7.0.9' }}-unleashed-${{ github.run_number }}"
+          name: "🦍 Linux ${{ github.event.inputs.kernel_version || '7.0.9' }} Unleashed — Build #${{ github.run_number }}"
+          body: |
+            ## 🦍 Gorilla Unleashed Kernel Build
+
+            Auto-built from commit `${{ github.sha }}` on `${{ github.ref_name }}`.
+
+            ### Install instructions:
+            Download the two `.deb` files below and run:
+            ```bash
+            sudo dpkg -i linux-headers-*.deb linux-image-*.deb
+            sudo reboot
+            ```
+
+            ### What's included:
+            - Wi-Fi regulatory bypass (max TX power, no channel throttling)
+            - HT40 CCA override (maintains 40MHz width in noisy environments)
+            - TCP CWND scaled to 128 (fast-start for multi-gigabit links)
+            - TCP memory buffers raised to 1GB
+            - ALC269 audio latency fix (no more codec interrupt spikes)
+            - BBR + FQ-Codel congestion control enabled
+          files: release-artifacts/*.deb
+          draft: false
+          prerelease: false

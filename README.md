@@ -1,6 +1,25 @@
-# Gorilla Unleashed: Optimized Linux Kernel 7.1.2
+# Debian Kernel — Gorilla Unleashed
 
-A fully automated repository containing patches, configurations, and a one-click build utility to recreate our custom-tuned, high-performance Debian/Ubuntu Linux kernel.
+Custom-tuned, high-performance Linux kernels for Debian and Ubuntu: patches,
+configurations, one-click build utilities and prebuilt `.deb` packages.
+
+**This is the home of every Gorilla kernel.** The current line is 7.1.2; earlier
+releases live in [`versions/`](versions/) and their prebuilt packages are on the
+[releases page](../../releases).
+
+| Kernel | Tree | Prebuilt |
+|---|---|---|
+| **7.1.2 Unleashed** — current | this repository | [latest](../../releases) |
+| 7.0.9 Unleashed | [`versions/7.0.9/`](versions/7.0.9/) | [v7.0.9-unleashed](../../releases/tag/v7.0.9-unleashed) |
+| 7.0.5 | [`versions/7.0.5/`](versions/7.0.5/) | [v7.0.5](../../releases/tag/v7.0.5) |
+| 6.19.13 ULTIMATE | [`versions/6.19.13/`](versions/6.19.13/) | [v6.19.13-7-ULTIMATE](../../releases/tag/v6.19.13-7-ULTIMATE) |
+
+*Consolidated 2026-08-18 from four separate repositories. The originals are
+archived and read-only; every old link still resolves.*
+
+---
+
+## Kernel 7.1.2 Unleashed
 
 ---
 

@@ -1,0 +1,20 @@
+# 🦍 GORILLA UNLEASHED: Patched Files Path Registry
+
+This file tracks the exact original location of every patched file in this directory relative to the root of the kernel source tree.
+
+*   `net/wireless/reg.c` -> `reg.c`
+net/wireless/reg.c -> reg.c
+*   `drivers/net/wireless/ath/ath9k/hw.c` -> `hw.c`
+drivers/net/wireless/ath/ath9k/hw.c -> hw.c
+*   `include/net/tcp.h` -> `tcp.h`
+include/net/tcp.h -> tcp.h
+*   `net/ipv4/tcp.c` -> `tcp.c`
+net/ipv4/tcp.c -> tcp.c
+*   `drivers/net/wireless/ath/ath9k/init.c` -> `init.c`
+drivers/net/wireless/ath/ath9k/init.c -> init.c
+*   `drivers/net/wireless/ath/ath9k/gpio.c` -> `gpio.c`
+drivers/net/wireless/ath/ath9k/gpio.c -> gpio.c
+*   `drivers/net/wireless/ath/ath9k/btcoex.c` -> `btcoex.c`
+drivers/net/wireless/ath/ath9k/btcoex.c -> btcoex.c
+*   `sound/hda/codecs/realtek/alc269.c` -> `alc269.c`
+sound/hda/codecs/realtek/alc269.c -> alc269.c

@@ -1,0 +1,26 @@
+# ==============================================================================
+# 🦍 GORILLA UNLEASHED — .gitignore
+# ==============================================================================
+# These files are too large for GitHub (>100MB limit).
+# The .deb packages are the BUILD OUTPUT — someone who clones this repo
+# and runs recreate_success.sh will generate them on their own machine.
+# ==============================================================================
+
+# Built kernel Debian packages (these are output, not source)
+*.deb
+
+# Kernel source tree (downloaded at build time by recreate_success.sh)
+linux-*/
+*.tar.xz
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Build logs
+*.log
+kernel-build-*/
+
+# Backup files created by universal_freedom_installer.py
+*.orig_backup

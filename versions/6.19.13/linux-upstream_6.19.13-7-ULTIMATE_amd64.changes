@@ -1,0 +1,37 @@
+Format: 1.8
+Date: Wed, 22 Apr 2026 02:06:22 +0100
+Source: linux-upstream
+Binary: linux-headers-6.19.13 linux-image-6.19.13 linux-image-6.19.13-dbg linux-libc-dev
+Architecture: amd64
+Version: 6.19.13-7-ULTIMATE
+Distribution: trixie
+Urgency: low
+Maintainer: gorilla <gorilla@gorilla-sve14a3aj>
+Changed-By: gorilla <gorilla@gorilla-sve14a3aj>
+Description:
+ linux-headers-6.19.13 - Linux kernel headers for 6.19.13 on amd64
+ linux-image-6.19.13 - Linux kernel, version 6.19.13
+ linux-image-6.19.13-dbg - Linux kernel debugging symbols for 6.19.13
+ linux-libc-dev - Linux support headers for userspace development
+Changes:
+ linux-upstream (6.19.13-7-ULTIMATE) trixie; urgency=low
+ .
+   * Custom built Linux kernel.
+Checksums-Sha1:
+ d8f1fbaf26b387b3ddd026fc5025f0f1a48ffc7a 10616144 linux-headers-6.19.13_6.19.13-7-ULTIMATE_amd64.deb
+ 1abee2079b32f98adfe524faac5e34414f61e510 1041387156 linux-image-6.19.13-dbg_6.19.13-7-ULTIMATE_amd64.deb
+ 33d7767e2d82e139cb3af3c3440e0e2d4ddc827f 161945824 linux-image-6.19.13_6.19.13-7-ULTIMATE_amd64.deb
+ 8a51b65df511d867447e32d598d04977c63f51bc 1481876 linux-libc-dev_6.19.13-7-ULTIMATE_amd64.deb
+ b25d641e800c4f5ea030b013d40a4db432471220 6983 linux-upstream_6.19.13-7-ULTIMATE_amd64.buildinfo
+Checksums-Sha256:
+ 5917f3e64772a6bf4b83e5b1067f92491749095ba3ee4ad83184ebb47edcd8b4 10616144 linux-headers-6.19.13_6.19.13-7-ULTIMATE_amd64.deb
+ 967f326f6a52e157d27a5726d438189bc5c0de0081e1b8006e927956fe8aeef3 1041387156 linux-image-6.19.13-dbg_6.19.13-7-ULTIMATE_amd64.deb
+ 70958e83a3acdc90c5a54f2a378920ae637ea8f89f262feb294363954ac6ca5a 161945824 linux-image-6.19.13_6.19.13-7-ULTIMATE_amd64.deb
+ 560fb281a6714cc0c6e1e4028ba66735ee63a56ede9d98167b634522026fda71 1481876 linux-libc-dev_6.19.13-7-ULTIMATE_amd64.deb
+ 7dee1ae78c0d51095288a1af2578f630d69f1bbdc9a11e7652e61fde935e3e36 6983 linux-upstream_6.19.13-7-ULTIMATE_amd64.buildinfo
+Files:
+ 24260eba2c7973b40d5a0d3ed71fb67e 10616144 kernel optional linux-headers-6.19.13_6.19.13-7-ULTIMATE_amd64.deb
+ ed68c54c7e72b8b76cfb1c58058462ca 1041387156 debug optional linux-image-6.19.13-dbg_6.19.13-7-ULTIMATE_amd64.deb
+ fa751920b09d5dae74940886ebed1456 161945824 kernel optional linux-image-6.19.13_6.19.13-7-ULTIMATE_amd64.deb
+ faf2484f08ebdd24fb44bf39509be807 1481876 devel optional linux-libc-dev_6.19.13-7-ULTIMATE_amd64.deb
+ 5a86edf0a495f2edeb214bd542b7671c 6983 kernel optional linux-upstream_6.19.13-7-ULTIMATE_amd64.buildinfo

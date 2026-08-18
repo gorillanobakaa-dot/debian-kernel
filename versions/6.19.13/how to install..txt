@@ -1,0 +1,7 @@
+ sudo dpkg -i ~/Documents/linux-image-6.19.13_6.19.13-5_amd64.deb ~/Documents/linux-headers-6.19.13_6.19.13-5_amd64.deb ~/Documents/linux-libc-dev_6.19.13-5_amd64.deb
+ 
+ 
+ # Move newly built debs to a clean folder and install all at once
+mkdir -p "${HOME}/Documents/kernel_install_temp"
+mv "${WORKSPACE}"/*.deb "${HOME}/Documents/kernel_install_temp/"
+sudo dpkg -i "${HOME}/Documents/kernel_install_temp/"*.deb

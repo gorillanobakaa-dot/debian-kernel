@@ -1,0 +1,28 @@
+🦍 GORILLA KERNEL PACKAGE GUIDE
+====================================
+
+You do NOT need to install every .deb file in this folder. Depending on your needs, you can choose which ones to install.
+
+QUICK SELECTION:
+----------------
+1. MANDATORY: linux-image-7.0.5...
+   - This is the actual Gorilla Kernel. You need this to boot.
+
+2. RECOMMENDED: linux-headers-7.0.5...
+   - Needed for WiFi drivers, NVIDIA drivers, and VirtualBox.
+
+3. OPTIONAL: linux-libc-dev
+   - Only needed for developers compiling system-level software.
+
+4. OPTIONAL: linux-image-7.0.5...-dbg
+   - Very large file. Only used for kernel debugging. Not needed for performance.
+
+VERSION NOTE:
+-------------
+If you see multiple versions (e.g., -5 and -6), always install the LATEST version (the highest number).
+
+HOW TO INSTALL MANUALLY:
+------------------------
+sudo dpkg -i <package_name>.deb
+
+(Or use the 1-click 'INSTALL_GORILLA_KERNEL.sh' to install the full suite automatically).
