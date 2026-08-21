@@ -1,5 +1,16 @@
 # Debian Kernel — Gorilla Unleashed
 
+<!-- WHO-THIS-IS-FOR: managed block, do not edit by hand -->
+
+**Custom-tuned Linux kernels for old Debian and Ubuntu laptops: patches, configs, and prebuilt .deb packages.**
+
+Built for the people every other tool prices out: kids with no credit
+card, 15-year-old laptops, data sold by the megabyte. Free forever, by
+design, not as a trial.
+Why, with the numbers: [PHILOSOPHY.md](https://github.com/gorillanobakaa-dot/Gorilla.Opencode/blob/main/PHILOSOPHY.md)
+
+<!-- /WHO-THIS-IS-FOR -->
+
 Custom-tuned, high-performance Linux kernels for Debian and Ubuntu: patches,
 configurations, one-click build utilities and prebuilt `.deb` packages.
 
