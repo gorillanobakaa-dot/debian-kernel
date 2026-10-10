@@ -1,5 +1,5 @@
---- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/sound/hda/codecs/realtek/alc269.c	2026-05-17 16:16:34.000000000 +0100
-+++ /home/gorilla/kernel-build-workspace/linux-7.0.9/sound/hda/codecs/realtek/alc269.c	2026-05-20 13:43:48.506433079 +0100
+--- a/sound/hda/codecs/realtek/alc269.c	2026-05-17 16:16:34.000000000 +0100
++++ b/sound/hda/codecs/realtek/alc269.c	2026-05-20 13:43:48.506433079 +0100
 @@ -4138,6 +4138,7 @@
  	ALC245_FIXUP_ACER_MICMUTE_LED,
  	ALC245_FIXUP_CS35L41_I2C_2_MUTE_LED,

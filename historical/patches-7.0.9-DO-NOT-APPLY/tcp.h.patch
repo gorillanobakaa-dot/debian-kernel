@@ -1,5 +1,5 @@
---- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/include/net/tcp.h	2026-05-17 16:16:34.000000000 +0100
-+++ /home/gorilla/kernel-build-workspace/linux-7.0.9/include/net/tcp.h	2026-05-21 19:06:27.660948112 +0100
+--- a/include/net/tcp.h	2026-05-17 16:16:34.000000000 +0100
++++ b/include/net/tcp.h	2026-05-21 19:06:27.660948112 +0100
 @@ -116,14 +116,14 @@
  				 * to ~3sec-8min depending on RTO.
  				 */

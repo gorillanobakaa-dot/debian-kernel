@@ -1,5 +1,5 @@
---- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/drivers/net/wireless/ath/ath9k/hw.c	2026-05-17 16:16:34.000000000 +0100
-+++ /home/gorilla/kernel-build-workspace/linux-7.0.9/drivers/net/wireless/ath/ath9k/hw.c	2026-05-21 15:31:44.469486924 +0100
+--- a/drivers/net/wireless/ath/ath9k/hw.c	2026-05-17 16:16:34.000000000 +0100
++++ b/drivers/net/wireless/ath/ath9k/hw.c	2026-05-21 15:31:44.469486924 +0100
 @@ -398,7 +398,7 @@
  
  	ah->config.dma_beacon_response_time = 1;

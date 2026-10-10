@@ -1,5 +1,5 @@
---- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/drivers/net/wireless/ath/ath9k/init.c	2026-05-17 16:16:34.000000000 +0100
-+++ /home/gorilla/kernel-build-workspace/linux-7.0.9/drivers/net/wireless/ath/ath9k/init.c	2026-05-21 08:21:41.923839654 +0100
+--- a/drivers/net/wireless/ath/ath9k/init.c	2026-05-17 16:16:34.000000000 +0100
++++ b/drivers/net/wireless/ath/ath9k/init.c	2026-05-21 08:21:41.923839654 +0100
 @@ -43,7 +43,7 @@
  module_param_named(debug, ath9k_debug, uint, 0);
  MODULE_PARM_DESC(debug, "Debugging mask");

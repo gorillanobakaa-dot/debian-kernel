@@ -1,5 +1,5 @@
---- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/net/ipv4/tcp.c	2026-05-17 16:16:34.000000000 +0100
-+++ /home/gorilla/kernel-build-workspace/linux-7.0.9/net/ipv4/tcp.c	2026-05-21 19:07:20.464945904 +0100
+--- a/net/ipv4/tcp.c	2026-05-17 16:16:34.000000000 +0100
++++ b/net/ipv4/tcp.c	2026-05-21 19:07:20.464945904 +0100
 @@ -464,7 +464,7 @@
  	 * initialization of these values.
  	 */
