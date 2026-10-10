@@ -24,8 +24,8 @@ permissions:
 
 env:
   KVER: ${{ github.event.inputs.kernel_version || '7.2.9' }}
-  # the Fieldkit branch or tag to run; main once the Linux-side work is merged there
-  FIELDKIT_REF: g/admiring-heisenberg-s3fczd
+  # the Fieldkit branch or tag to run
+  FIELDKIT_REF: main
   KWORK: ${{ github.workspace }}/../kernel-work
 
 jobs:
