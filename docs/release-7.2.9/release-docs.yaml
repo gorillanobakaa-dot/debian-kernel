@@ -1,0 +1,4 @@
+# fieldkit docs release --manifest docs/release-7.2.9/release-docs.yaml
+sources: [../VERIFIED_MEASUREMENTS.md, SHA256SUMS, REBASE-EVIDENCE.txt, ../../alc269.c, ../../README.md, ../../patches/alc269.c.patch, ../../patches/series,
+          ../../kernel_config_injector.py, ../../PATCHED_FILES_PATH_REGISTRY.txt]
+plain: [opening.md, layman.md, developer.md]

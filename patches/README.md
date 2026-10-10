@@ -1,6 +1,9 @@
-# The patch set — Gorilla Unleashed 7.1.2
+# The patch set — Gorilla Unleashed 7.2.9
 
-**14 patches · +196 / −103 lines against pristine Linux 7.1.2.**
+**13 patches · +189 / −103 lines against pristine Linux 7.2.9.**
+
+(The 7.1.2 edition of this page said "14 patches · +196"; the patch files themselves always added up to 13 and
++189. `sony-laptop.c` ships unchanged from upstream and has no patch.)
 
 That is the entire footprint of this project on the kernel source. Every line is
 here, and every line is explained in [`../docs/`](../docs).
@@ -15,14 +18,15 @@ here, and every line is explained in [`../docs/`](../docs).
 
 This does **not** check that the patches "look right". It:
 
-1. extracts a fresh copy of the affected files **from `linux-7.1.2.tar.xz`**
-   (sha256 `37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f`),
+1. extracts a fresh copy of the affected files **from `linux-7.2.9.tar.xz`**
+   (sha256 `b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba`),
 2. applies every patch with `patch -p1`, and
 3. compares the result **byte-for-byte** against the source files this repo ships.
 
 Step 3 is the one that matters. "It applied" only proves the hunks fit. **Byte
 identity proves the patch set is complete** — that nothing in the shipped sources
-came from somewhere the patches don't describe. Current result: **14/14 PASS.**
+came from somewhere the patches don't describe. Current result: **14/14 byte for byte** against a pristine 7.2.9
+checkout (github.com/gregkh/linux, tag v7.2.9); the project's CI repeats it against kernel.org's tarball.
 
 The baseline is the **tarball**, never a directory. A directory can be quietly
 patched and then mistaken for pristine; that is not hypothetical here — it is
@@ -32,7 +36,7 @@ See [`../historical/README.md`](../historical/README.md).
 ## Apply them
 
 ```bash
-cd /path/to/linux-7.1.2
+cd /path/to/linux-7.2.9
 while read -r p; do
     case "$p" in ''|\#*) continue ;; esac
     patch -p1 < /path/to/Kernel.7.1.2.Patches/patches/"$p"
@@ -93,7 +97,7 @@ A "patch" is a list of the exact lines someone changed — like tracked changes 
 document. Instead of asking you to trust a 330 KB file, it says *"on line 2843, we
 replaced this with that, and here is why."*
 
-There are 14 of them here, and together they change **196 lines and remove 103**
+There are 13 of them here, and together they add **189 lines and remove 103**
 out of roughly 40 million in the Linux kernel. That is the whole project. You can
 read all of it in an afternoon, and the script above proves the list is complete —
 that we haven't changed anything we didn't tell you about.

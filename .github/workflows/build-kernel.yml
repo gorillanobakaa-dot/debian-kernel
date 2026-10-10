@@ -1,190 +1,106 @@
-name: 🦍 Gorilla Unleashed — Kernel Build & Release
+# The debian-kernel project's build, release and release check, run BY Gorilla Fieldkit on a GitHub runner.
+#
+# This file is the master copy. The kernel project's .github/workflows/build-kernel.yml is a copy of it: change it
+# here, test it here (tests/test_ci_templates.py), then copy it. Born 2026-10-10, replacing two one-off workflows
+# written during the 7.2.9 migration: every step below is a Fieldkit command or the project's own script, so the
+# runner does exactly what the pipeline does on the maintainer's machine.
+#
+# pull_request: build and check only. push to main / Run workflow: also publish a pre-release and prove it.
+name: Gorilla Unleashed kernel (built and checked by Gorilla Fieldkit)
 
-# When does this run?
-# - On every push to main (so every time you upload new patches, it auto-builds)
-# - Manually from the GitHub Actions tab ("Run workflow" button)
 on:
   push:
     branches: [ "main" ]
+  pull_request:
   workflow_dispatch:
     inputs:
       kernel_version:
-        description: 'Kernel version to build (e.g. 7.1.2)'
+        description: "Kernel version to build"
         required: false
-        default: '7.1.2'
+        default: "7.2.9"
+
+permissions:
+  contents: write
+
+env:
+  KVER: ${{ github.event.inputs.kernel_version || '7.2.9' }}
+  # the Fieldkit branch or tag to run
+  FIELDKIT_REF: main
+  KWORK: ${{ github.workspace }}/../kernel-work
 
 jobs:
-  build-kernel:
-    name: Build Linux ${{ github.event.inputs.kernel_version || '7.1.2' }} Unleashed
+  kernel:
     runs-on: ubuntu-latest
-
-    # This gives the workflow permission to create a GitHub Release
-    permissions:
-      contents: write
-
+    timeout-minutes: 300
     steps:
-
-      # ── Step 1: Checkout the repository ──────────────────────────────────────
-      - name: 📥 Checkout Repository
+      - name: The kernel project
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      # ── Step 2: Install build dependencies ───────────────────────────────────
-      - name: 📦 Install Kernel Build Dependencies
+      - name: Gorilla Fieldkit
+        uses: actions/checkout@v4
+        with:
+          repository: gorillanobakaa-dot/Gorilla.Fieldkit
+          ref: ${{ env.FIELDKIT_REF }}
+          path: .fieldkit
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: What this machine needs (fieldkit doctor), then install it
         run: |
+          (cd .fieldkit && python -m fieldkit.core.doctor --for debian-kernel) || true   # before install: stdlib only
+          python -m pip install -e ".fieldkit[test]"
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential libncurses-dev bison flex \
-            libssl-dev libelf-dev bc git rsync curl xz-utils \
-            kmod cpio dpkg-dev debhelper python3 \
-            libdw-dev libzstd-dev dwarves zstd
-          # libdw-dev is a HARD build-dep of bindeb-pkg and was missing, so
-          # dpkg-checkbuilddeps aborted every single run at the compile step:
-          #   "Unmet build dependencies: libdw-dev:native"
-          # This repo has been advertising an auto-builder that never once
-          # produced a package. dwarves(pahole)+libzstd/zstd are needed for BTF
-          # generation and zstd-compressed packages respectively.
-          echo "--- build-dep sanity ---"
-          for p in libdw-dev libelf-dev libssl-dev dwarves; do
-            dpkg -s "$p" >/dev/null 2>&1 && echo "  ok   $p" \
-              || { echo "::error::$p failed to install"; exit 1; }
-          done
+          sudo apt-get install -y $(python -c "from fieldkit.build import kernel; print(' '.join(kernel.BUILD_DEPS))")
+          printf '{"kernel": {"workdir": "%s", "project": "%s"}}\n' "$KWORK" "$GITHUB_WORKSPACE" > .fieldkit/fieldkit.local.json
+          fieldkit doctor --for debian-kernel
 
-      # ── Step 3: Download upstream kernel source ───────────────────────────────
-      - name: 🌐 Download Linux Kernel Source
+      - name: The pipeline (kernel.org source checked against its sha256, patches, config, build, .deb and .rpm)
         run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
-          echo "Downloading linux-${KERNEL_VER}.tar.xz..."
-          curl -L -o "linux-${KERNEL_VER}.tar.xz" \
-            "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KERNEL_VER}.tar.xz"
-          tar -xf "linux-${KERNEL_VER}.tar.xz"
+          export TARBALL_PATH="$KWORK/linux-$KVER.tar.xz"
+          fieldkit pipeline run debian-kernel --var version="$KVER"
 
-      # ── Step 3b: Prove the patch set still reproduces the shipped sources ────
-      # Cheap, offline, and it fails the build BEFORE compiling for an hour if a
-      # source file was edited without regenerating its patch.
-      - name: 🔍 Verify patch set integrity
+      - name: The project's own proof against the official tarball
+        run: TARBALL_PATH="$KWORK/linux-$KVER.tar.xz" ./verify_patches.sh
+
+      - name: The release page, with the checksums of the packages this run built
         run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
-          python3 make_patches.py --check
-          TARBALL_PATH="./linux-${KERNEL_VER}.tar.xz" ./verify_patches.sh
+          OUT="$KWORK/debs-$KVER"
+          cd "$OUT"
+          rm -f linux-libc-dev_*.deb kernel-headers-*.rpm      # system headers: never to be installed from here
+          sha256sum *.deb *.rpm > SHA256SUMS
+          cd "$GITHUB_WORKSPACE"
+          { echo "## Package checksums"; echo; echo "Built by this run from kernel.org's linux-$KVER.tar.xz."; echo;
+            echo '```'; cat "$OUT/SHA256SUMS"; echo '```'; } > "$RUNNER_TEMP/checksums.md"
+          D="docs/release-$KVER"
+          fieldkit release-page compose --opening "$D/opening.md" --layman "$D/layman.md" \
+            --developer "$D/developer.md" --extra "$RUNNER_TEMP/checksums.md" --out "$RUNNER_TEMP/release-page.md"
+          fieldkit release-page check "$RUNNER_TEMP/release-page.md" --layman "$D/layman.md" --developer "$D/developer.md"
+          fieldkit docs release --manifest "$D/release-docs.yaml"
 
-      # ── Step 4: Apply the source patches ─────────────────────────────────────
-      - name: 🩹 Apply Gorilla source patches
-        run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
-          python3 universal_freedom_installer.py "./linux-${KERNEL_VER}"
-          # Verify the artifact, never the exit code (project directive §2).
-          n=$(grep -rl GORILLA "./linux-${KERNEL_VER}/net/wireless/reg.c" \
-                 "./linux-${KERNEL_VER}/net/mac80211/mlme.c" \
-                 "./linux-${KERNEL_VER}/drivers/net/wireless/ath/regd.c" | wc -l)
-          [ "$n" -eq 3 ] || { echo "::error::patches did not land (only $n/3 marked files)"; exit 1; }
-          echo "patched sources confirmed present"
-
-      # ── Step 5: Apply custom kernel config ───────────────────────────────────
-      # NOTE: the injector is NOT optional. Without it CI produced a DIFFERENT
-      # kernel from every local build -- no EROFS, no forensics flags, nandsim
-      # built in, no CFG80211_REG_RELAX_NO_IR. A CI artifact that silently
-      # disagrees with the documented build is worse than no CI artifact.
-      - name: ⚙️ Apply custom kernel configuration + audited change-set
-        run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
-          cp kernel.config "linux-${KERNEL_VER}/.config"
-          python3 kernel_config_injector.py "./linux-${KERNEL_VER}"
-          make -C "linux-${KERNEL_VER}" olddefconfig
-          # Spot-check that the change-set survived olddefconfig.
-          for f in CONFIG_EROFS_FS=y CONFIG_IKCONFIG_PROC=y CONFIG_CFG80211_REG_RELAX_NO_IR=y; do
-            grep -q "^$f" "linux-${KERNEL_VER}/.config" \
-              || { echo "::error::$f missing after olddefconfig"; exit 1; }
-          done
-          echo "config change-set verified in .config"
-
-      # ── Step 6: Compile the kernel ───────────────────────────────────────────
-      - name: 🔥 Compile Kernel (Multi-threaded)
-        run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
-          # Name via the 64-char-guarded namer, NOT a hand-written string. The
-          # old hardcoded name still said "+60db" -- the King Kong audio hack that
-          # was replaced by the EAPD fixup in June -- so every CI artifact was
-          # advertising a feature the kernel had not contained for months.
-          # Fewer tags than a local build on purpose: the full set lands at
-          # exactly 64/64 chars, and a name with zero headroom breaks the moment
-          # anyone adds a tag or the timestamp format shifts. 51/64 leaves room.
-          LVERSION=$(python3 kernel_build_namer.py localversion \
-                       --base "${KERNEL_VER}" \
-                       --tags unleashed gorilla eapd bbr ci)
-          echo "LOCALVERSION: ${LVERSION}"
-          cd "linux-${KERNEL_VER}"
-          # -O3 only: CI runners are not the target CPU, so -march=native here
-          # would produce binaries tuned for whatever hardware GitHub allocated.
-          export KCFLAGS="-O3 -pipe"
-          make LOCALVERSION="${LVERSION}" -j$(nproc) bindeb-pkg KDEB_PKGVERSION="${KERNEL_VER}"
-
-      # ── Step 7: Collect build output .deb packages ───────────────────────────
-      - name: 📦 Collect Debian Packages
-        run: |
-          mkdir -p release-artifacts
-          mv ../*.deb release-artifacts/ 2>/dev/null || mv *.deb release-artifacts/ 2>/dev/null || true
-          ls -lah release-artifacts/
-
-      # ── Step 8: Upload packages as GitHub Release ────────────────────────────
-      - name: 🚀 Create GitHub Release with .deb Packages
+      - name: Publish a pre-release (not boot-tested)
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v${{ github.event.inputs.kernel_version || '7.1.2' }}-unleashed-${{ github.run_number }}"
-          name: "🦍 Linux ${{ github.event.inputs.kernel_version || '7.1.2' }} Unleashed — Build #${{ github.run_number }}"
-          body: |
-            ## 🦍 Gorilla Unleashed Kernel Build
-
-            Auto-built from commit `${{ github.sha }}` on `${{ github.ref_name }}`.
-            Every patch was verified against pristine upstream **before** this was
-            compiled — see the "Verify patch set integrity" step in the build log.
-
-            ### ⚠️ Read this first — keep your current kernel
-
-            Installing this does **not** remove your existing kernel, and you should
-            not remove it either. If this one misbehaves, reboot, hold **SHIFT**
-            (or tap **Esc**), choose **Advanced options**, and pick your previous
-            kernel. Nothing is lost and no reinstall is needed.
-
-            ### Install
-
-            ```bash
-            sudo dpkg -i linux-image-*.deb linux-headers-*.deb
-            sudo reboot
-            ```
-
-            Then check it:
-
-            ```bash
-            ./kernel_selftest.sh
-            ```
-
-            > **Do not install `linux-libc-dev`** if you see it anywhere. Those are
-            > userspace headers your distribution already manages, and replacing
-            > them with a custom build can confuse `apt`. Only the **image** and
-            > **headers** packages above are meant to be installed.
-
-            ### What's actually in it
-
-            - **Wi-Fi deregulation, all four layers** — restriction flags, the
-              Atheros re-stamp, the AP's 802.11d country IE, and the AP's 802.11h
-              power constraint. Your router no longer decides what your radio may do.
-            - **HT40 CCA override** — keeps 40 MHz width in noisy environments.
-            - **TCP**: BBR + fq_codel, initial congestion window raised to 128.
-            - **ALC269 EAPD fixup** — Sony VAIO speakers are no longer muffled by
-              the BIOS.
-            - **Forensic filesystem support** — EROFS (Android images), exFAT,
-              NTFS3, HFS+, and the rest.
-
-            **Honest limits.** This cannot make a radio transmit beyond its
-            factory-calibrated ceiling — no software can. Performance items are
-            design rationale, not benchmarks: no A/B measurement has been run.
-            See `docs/VERIFIED_MEASUREMENTS.md`, which lists explicitly what was
-            *not* measured.
-
-            CI builds use `-O3` only. Local builds add `-march=native`, which a
-            shared runner cannot do correctly.
+          tag_name: "v${{ env.KVER }}-unleashed-${{ github.run_number }}"
+          target_commitish: ${{ github.sha }}
+          name: "Linux ${{ env.KVER }} Unleashed, build ${{ github.run_number }} (pre-release: not yet boot-tested)"
+          body_path: ${{ runner.temp }}/release-page.md
+          prerelease: true
           files: |
-            release-artifacts/linux-image-*.deb
-            release-artifacts/linux-headers-*.deb
-          draft: false
-          prerelease: false
+            ${{ env.KWORK }}/debs-${{ env.KVER }}/*.deb
+            ${{ env.KWORK }}/debs-${{ env.KVER }}/*.rpm
+            ${{ env.KWORK }}/debs-${{ env.KVER }}/SHA256SUMS
+
+      - name: The release gate (published == tested, privacy, the project's tests on the tag)
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: "v${{ env.KVER }}-unleashed-${{ github.run_number }}"
+        run: |
+          git fetch --tags --force
+          export KOUT="$KWORK/debs-$KVER" TARBALL_PATH="$KWORK/linux-$KVER.tar.xz"
+          fieldkit release check .fieldkit/releases/debian-kernel.yaml

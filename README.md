@@ -30,6 +30,14 @@ archived and read-only; every old link still resolves.*
 
 ---
 
+## Kernel 7.2.9 Unleashed (2026-10-10)
+
+The 7.1.2 patch set, carried to Linux 7.2.9 unchanged in what it does: 12 of 13 patches applied as they were, the
+Realtek speaker patch was moved to its new place, and every patch changes exactly the lines it changed on 7.1.2.
+Built as `.deb` and `.rpm`; **not yet started on real hardware.** The full release notes, plain language first,
+are in `RELEASE_REPORT.md`; the measurements in `docs/VERIFIED_MEASUREMENTS.md`. The sections below describe
+the 7.0.9 → 7.1.2 step and remain accurate for it.
+
 ## Kernel 7.1.2 Unleashed
 
 ---

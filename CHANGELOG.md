@@ -1,4 +1,20 @@
 # 🦍 Gorilla Unleashed Kernel — Version Changelog
+
+## From 7.1.2 → 7.2.9 (2026-10-10)
+
+**For everyone:** nothing about what the kernel does has changed. Every tweak from 7.1.2 was carried to the newer
+Linux 7.2.9: twelve fitted exactly, and the speaker boost was moved to its new place in the file, the same lines as
+before. One setting that no longer exists in Linux (`CONFIG_SCSI_MQ_DEFAULT`) was removed; it did nothing in 7.1.2
+either. This version is built as `.deb` and `.rpm` packages and has **not been started on real hardware yet**.
+The full notes, plain language first and developer detail after, are in `RELEASE_REPORT.md`.
+
+**For developers:** 13 patches, `+189 / -103` against pristine 7.2.9; 13 of 13 change the same lines as on 7.1.2;
+14 of 14 shipped files rebuilt byte for byte; config 248 of 248. The baseline came from github.com/gregkh/linux
+because kernel.org was unreachable from the migration machine; the 7.2.9 tarball sha256 (`b4c5dfbe…d8ba`) was
+read from kernel.org by a GitHub runner, and release packages are built by CI from kernel.org's tarball. Evidence: `docs/release-7.2.9/REBASE-EVIDENCE.txt` and `docs/VERIFIED_MEASUREMENTS.md`.
+
+---
+
 ## From 7.0.9 → 7.1.2: What Changed, What's New, What Got Better
 
 This document is written in **dual-track language** — Section A for everyday users, Section B for developers — following the same style as our main README.

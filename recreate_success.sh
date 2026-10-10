@@ -1,9 +1,9 @@
 #!/usr/bin/bash
 # ==============================================================================
-# GORILLA UNLEASHED KERNEL 7.1.2 — MASTER REBUILD SCRIPT
+# GORILLA UNLEASHED KERNEL 7.2.9 — MASTER REBUILD SCRIPT
 # ==============================================================================
 # Automates the entire process:
-#   1. Localizes and validates the target linux-7.1.2 source directory
+#   1. Localizes and validates the target linux-7.2.9 source directory
 #   2. Installs the custom Realtek sound, ath9k Wi-Fi, and TCP buffer patches
 #   3. Injects the custom preemption, BBR, and hardware acceleration options
 #   4. Compiles the kernel using optimized host flags (-O3 -march=native)
@@ -12,12 +12,12 @@
 set -e
 
 # Default to parent directory source tree if not provided
-TARGET_SOURCE="${1:-../linux-7.1.2}"
+TARGET_SOURCE="${1:-../linux-7.2.9}"
 TARGET_SOURCE=$(readlink -f "$TARGET_SOURCE")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "======================================================================"
-echo "         🦍 GORILLA UNLEASHED KERNEL 7.1.2 AUTO-REBUILDER 🦍"
+echo "         🦍 GORILLA UNLEASHED KERNEL 7.2.9 AUTO-REBUILDER 🦍"
 echo "======================================================================"
 echo " Target Source Directory: $TARGET_SOURCE"
 echo " Script Directory:        $SCRIPT_DIR"
@@ -92,7 +92,7 @@ make -C "$TARGET_SOURCE" olddefconfig
 echo -e "\n🛠️ [Step 4/4] Starting kernel compilation (bindeb-pkg)..."
 # Safe, timestamped, 64-char-guarded LOCALVERSION (was a hand-tuned string with
 # no length guard — the old name was 63/64 chars, one from breaking).
-BASE_VER="7.1.2"
+BASE_VER="7.2.9"
 # Feature tags = the DISTINCTIVE badge of this build (edit to taste; the namer
 # enforces the 64-char limit and drops trailing tags if needed).
 LVERSION=$(python3 "$SCRIPT_DIR/kernel_build_namer.py" localversion \
@@ -148,6 +148,6 @@ ls -1 "$DEST_DIR"/linux-image-*.deb >/dev/null 2>&1 \
     || { echo "❌ No linux-image .deb produced — build did not deliver."; exit 1; }
 
 echo -e "\n======================================================================"
-echo "✅ SUCCESS: Gorilla Unleashed Kernel 7.1.2 built successfully!"
+echo "✅ SUCCESS: Gorilla Unleashed Kernel 7.2.9 built successfully!"
 echo "📂 Binaries saved to: $DEST_DIR"
 echo "======================================================================"

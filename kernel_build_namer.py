@@ -14,13 +14,13 @@ SUBCOMMANDS
 
 USAGE
   # LOCALVERSION for a build (prints the string; exits nonzero if it can't fit):
-  kernel_build_namer.py localversion --base 7.1.2 \
+  kernel_build_namer.py localversion --base 7.2.9 \
       --tags unleashed gorilla forensic eapd sdr bbr --year 2
   #  -> -<brand>-<tags>-<YY.MM.DD--HH.MM>   (brand prefix = "unleashed"+"gorilla")
   #  tags = the build's DISTINCTIVE badge (forensic/eapd/sdr...), not stock defaults
 
   # after the build, tidy the output dir:
-  kernel_build_namer.py cleandeb --base 7.1.2 --dir ./output_binaries
+  kernel_build_namer.py cleandeb --base 7.2.9 --dir ./output_binaries
 
 RULES ENFORCED
   * total = len(base) + len(localversion) <= 64  (Debian/uname hard limit)
@@ -98,7 +98,7 @@ def main():
     ap = argparse.ArgumentParser(description="Safe 64-char kernel naming.")
     sub = ap.add_subparsers(dest="cmd", required=True)
     lv = sub.add_parser("localversion")
-    lv.add_argument("--base", required=True, help="kernel version, e.g. 7.1.2")
+    lv.add_argument("--base", required=True, help="kernel version, e.g. 7.2.9")
     lv.add_argument("--tags", nargs="+", required=True,
                     help="feature tags; 'unleashed gorilla' become the fixed prefix")
     lv.add_argument("--year", type=int, choices=(2, 4), default=2,

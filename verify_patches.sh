@@ -3,7 +3,7 @@
 # Prove the patch set actually works — against the TARBALL, not a directory.
 # =============================================================================
 # Three things are checked, in increasing strength:
-#   1. every patch applies cleanly to pristine 7.1.2 (no fuzz, no rejects)
+#   1. every patch applies cleanly to pristine 7.2.9 (no fuzz, no rejects)
 #   2. the patched result is BYTE-IDENTICAL to the file we ship
 #   3. every registry entry has a patch, and vice versa
 #
@@ -11,7 +11,7 @@
 # output proves the patch set is COMPLETE — nothing in the shipped file came
 # from somewhere the patches don't describe.
 #
-# The baseline is extracted fresh from linux-7.1.2.tar.xz every run. A directory
+# The baseline is extracted fresh from linux-7.2.9.tar.xz every run. A directory
 # can be quietly patched; a tarball cannot. That distinction previously cost this
 # project an entire wrong audit conclusion.
 # =============================================================================
@@ -21,8 +21,8 @@ VAULT="$(dirname "$HERE")/Kernel.Vault.Do.Not.Delete"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-KVER="7.1.2"
-SHA_EXPECT="37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f"
+KVER="7.2.9"
+SHA_EXPECT="b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba"
 URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KVER}.tar.xz"
 
 G=$'\033[32m'; R=$'\033[31m'; N=$'\033[0m'
@@ -34,14 +34,16 @@ pass=0; fail=0
 # not match is refused outright rather than silently used (directive §3 — a wrong
 # baseline is exactly what produced this project's worst audit error).
 TARBALL=""
+# the usual places a person saves a download, by exact name; whatever is found must still match SHA_EXPECT below
 for c in "${TARBALL_PATH:-}" "$HERE/linux-${KVER}.tar.xz" \
-         "$VAULT/linux-${KVER}.tar.xz" "$(dirname "$HERE")/linux-${KVER}.tar.xz"; do
+         "$VAULT/linux-${KVER}.tar.xz" "$(dirname "$HERE")/linux-${KVER}.tar.xz" \
+         "$HOME/Downloads/linux-${KVER}.tar.xz" "$HOME/Documents/linux-${KVER}.tar.xz" "$HOME/linux-${KVER}.tar.xz"; do
     [ -n "$c" ] && [ -f "$c" ] && { TARBALL="$c"; break; }
 done
 
 if [ -z "$TARBALL" ]; then
     echo "No pristine linux-${KVER}.tar.xz found locally."
-    echo "  searched: \$TARBALL_PATH, $HERE, $VAULT"
+    echo "  searched: \$TARBALL_PATH, $HERE, $VAULT, $(dirname "$HERE"), ~/Downloads, ~/Documents, ~"
     if [ "${AUTO_FETCH:-}" = "1" ] || { [ -t 0 ] && \
          { printf '  Download it from kernel.org (~150 MB)? [y/N] '; read -r a; [ "$a" = y ] || [ "$a" = Y ]; }; }; then
         command -v curl >/dev/null || { echo "ABORT: curl not installed"; exit 1; }
@@ -73,9 +75,9 @@ echo
 mapfile -t RELS < <(grep -E '^[A-Za-z0-9_.\-]+[[:space:]]*->' "$HERE/PATCHED_FILES_PATH_REGISTRY.txt" \
                     | sed 's/.*->[[:space:]]*//')
 echo "extracting ${#RELS[@]} file(s) from the tarball (decompressing, please wait)..."
-printf 'linux-7.1.2/%s\n' "${RELS[@]}" > "$WORK/filelist"
+printf 'linux-7.2.9/%s\n' "${RELS[@]}" > "$WORK/filelist"
 tar -xJf "$TARBALL" -C "$WORK" -T "$WORK/filelist" 2>/dev/null
-SRC="$WORK/linux-7.1.2"
+SRC="$WORK/linux-7.2.9"
 [ -d "$SRC" ] || { echo "ABORT: extraction produced no tree"; exit 1; }
 echo "extracted to a throwaway tree"
 echo
@@ -110,7 +112,9 @@ echo "── 3. registry ↔ patch-set agreement ──"
 for rel in "${RELS[@]}"; do
     f=$(grep -E "\->[[:space:]]*${rel//\//\\/}$" "$HERE/PATCHED_FILES_PATH_REGISTRY.txt" | awk '{print $1}')
     if [ -f "$HERE/patches/$f.patch" ]; then :
-    elif cmp -s "$VAULT/linux-7.1.2/$rel" "$HERE/$f" 2>/dev/null; then
+    # against the pristine tree just extracted, not the maintainer's vault: a clone or a CI runner has no vault, and
+    # sony-laptop.c (shipped unchanged, so no patch) failed there as "in the registry but has no patch" (2026-10-10)
+    elif cmp -s "$SRC/$rel" "$HERE/$f" 2>/dev/null; then
         echo "  note: $f is identical to upstream (no patch needed)"
     else
         echo "  ${R}FAIL${N} $f is in the registry but has no patch"; fail=$((fail+1))

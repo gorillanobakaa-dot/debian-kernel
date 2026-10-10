@@ -1,11 +1,11 @@
 # Gorilla Unleashed -- net/mac80211/mlme.c
-# Baseline: pristine linux-7.1.2 (sha256 37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f)
+# Baseline: pristine linux-7.2.9 (sha256 b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba)
 # Apply from the kernel source root:  patch -p1 < patches/mlme.c.patch
 # Rationale: docs/mlme.c.md
 # +13 / -0 lines
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -3329,6 +3329,19 @@
+@@ -3693,6 +3693,19 @@
  	if (ieee80211_is_s1g_beacon(mgmt->frame_control))
  		return 0;	/* TODO */
  

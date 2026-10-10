@@ -76,3 +76,51 @@ a *design rationale*, not a measurement.
 | Files patched | `14 / 14` |
 | Compiler errors/warnings on patched files | `0` |
 | Self-test result | `PASS 24 · FAIL 0 · SKIP 0` |
+
+---
+
+# Verified measurements — the 7.2.9 migration and build (2026-10-10)
+
+Observed in a cloud build machine, **not** on the Sony VAIO. Nothing below says anything about how the 7.2.9 kernel
+runs on real hardware: it has not been booted yet.
+
+Machine: Ubuntu 24.04 container · 4 processor cores · gcc 13.3.0 · GNU ld 2.42. Pipeline: Gorilla Fieldkit
+`debian-kernel` (stages deps, extract, config, build, rpm, collect).
+
+## Source and patches
+
+| Item | Value |
+|---|---|
+| Pristine baseline | `v7.2.9` tag of github.com/gregkh/linux (kernel.org was not reachable from the build machine) |
+| Old patches on the mirror's `v7.1.2` | rebuild all `14` shipped 7.1.2 files byte for byte |
+| Patches that applied to 7.2.9 unchanged (no fuzz) | `12` of `13` |
+| Patch moved by hand to new anchors | `1` (`alc269.c`: `+27 / -1`, the same lines as on 7.1.2) |
+| Patches changing exactly the same lines as on 7.1.2 | `13` of `13` |
+| Patch set size against pristine 7.2.9 | `13` patches, `+189 / -103` lines |
+| Shipped files rebuilt byte for byte from pristine 7.2.9 + patches | `14` of `14` |
+| sha256 of `linux-7.2.9.tar.xz` | `b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba` (kernel.org's sha256sums.asc, read by a GitHub runner; its download matched) |
+
+## Configuration
+
+| Item | Value |
+|---|---|
+| Options in the audited change-set | `248` (was `249`; `CONFIG_SCSI_MQ_DEFAULT` has no Kconfig in 7.1.2 or 7.2.9) |
+| Options as requested after `olddefconfig` | `248` of `248` |
+| Same check on the `/boot/config` inside the package | `248` of `248` |
+| Patched files compiled in | all except `thinkpad_acpi.c` and `dell-pc.c` (`CONFIG_THINKPAD_ACPI` and the Dell driver are off) |
+
+## Build and packages
+
+| Item | Value |
+|---|---|
+| Build time, `bindeb-pkg` | about `16` minutes (config finished 13:28, packages written 13:43–13:44) |
+| uname | `7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28` (`48` of `64` characters) |
+| `linux-image` .deb | `29,023,040` bytes |
+| `linux-headers` .deb | `10,105,076` bytes |
+| `linux-libc-dev` .deb | `1,554,536` bytes |
+| `kernel` .rpm | `30,038,294` bytes |
+| `kernel-devel` .rpm | `13,652,727` bytes |
+| `kernel-headers` .rpm | `2,058,242` bytes |
+| RPM kernel against .deb kernel | same config byte for byte; decompressed images `72,940,392` bytes each, differing in `69` bytes (build number and build time in the version string) |
+| VAIO speaker fixup in the compiled kernel | present (its log line is in `vmlinux`) |
+| Boot on real hardware | not measured |

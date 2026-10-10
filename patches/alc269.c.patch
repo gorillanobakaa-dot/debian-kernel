@@ -1,19 +1,19 @@
 # Gorilla Unleashed -- sound/hda/codecs/realtek/alc269.c
-# Baseline: pristine linux-7.1.2 (sha256 37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f)
+# Baseline: pristine linux-7.2.9 (sha256 b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba)
 # Apply from the kernel source root:  patch -p1 < patches/alc269.c.patch
 # Rationale: docs/alc269.c.md
 # +27 / -1 lines
 --- a/sound/hda/codecs/realtek/alc269.c
 +++ b/sound/hda/codecs/realtek/alc269.c
-@@ -4155,6 +4155,7 @@
- 	ALC236_FIXUP_HP_DMIC,
- 	ALC256_FIXUP_HONOR_MRB_XXX_M1020_AUDIO,
- 	ALC245_FIXUP_HP_ENVY_X360_15_FH0XXX,
+@@ -4237,6 +4237,7 @@
+ 	ALC236_FIXUP_DELL_HP_POP_NOISE,
+ 	ALC274_FIXUP_HP_89E9_GPIO,
+ 	ALC274_FIXUP_HP_VERBS,
 +	ALC269_FIXUP_VAIO_EAPD_5DB,
  };
  
  /* A special fixup for Lenovo C940 and Yoga Duet 7;
-@@ -4191,11 +4192,36 @@
+@@ -4273,6 +4274,25 @@
  	__snd_hda_apply_fixup(codec, id, action, 0);
  }
  
@@ -37,7 +37,9 @@
 +}
 +
  static const struct hda_fixup alc269_fixups[] = {
- 	[ALC269_FIXUP_GPIO2] = {
+ 	[ALC233_FIXUP_WUJIE_SPEAKERS] = {
+ 		.type = HDA_FIXUP_PINS,
+@@ -4285,6 +4305,12 @@
  		.type = HDA_FIXUP_FUNC,
  		.v.func = alc_fixup_gpio2,
  	},
@@ -50,7 +52,7 @@
  	[ALC269_FIXUP_SONY_VAIO] = {
  		.type = HDA_FIXUP_PINCTLS,
  		.v.pins = (const struct hda_pintbl[]) {
-@@ -7931,7 +7957,7 @@
+@@ -8173,7 +8199,7 @@
  static const struct hda_quirk alc269_fixup_vendor_tbl[] = {
  	SND_PCI_QUIRK_VENDOR(0x1025, "Acer Aspire", ALC271_FIXUP_DMIC),
  	SND_PCI_QUIRK_VENDOR(0x103c, "HP", ALC269_FIXUP_HP_MUTE_LED),
@@ -58,4 +60,4 @@
 +	SND_PCI_QUIRK_VENDOR(0x104d, "Sony VAIO", ALC269_FIXUP_VAIO_EAPD_5DB),
  	SND_PCI_QUIRK_VENDOR(0x17aa, "Lenovo XPAD", ALC269_FIXUP_LENOVO_XPAD_ACPI),
  	SND_PCI_QUIRK_VENDOR(0x19e5, "Huawei Matebook", ALC255_FIXUP_MIC_MUTE_LED),
- 	{}
+ 	SND_PCI_QUIRK_VENDOR(0x2145, "Star Labs", ALC269_FIXUP_STARLABS_LIMIT_INT_MIC_BOOST),

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Generate unified .patch files for the Gorilla Unleashed 7.1.2 changes.
+"""Generate unified .patch files for the Gorilla Unleashed 7.2.9 changes.
 
-Diffs the PRISTINE upstream 7.1.2 source against our patched copy, one patch per
+Diffs the PRISTINE upstream 7.2.9 source against our patched copy, one patch per
 file, applicable from the kernel source root with `patch -p1`.
 
 WHY THIS EXISTS
@@ -14,7 +14,7 @@ change visible.
 THE BASELINE
 ------------
 Resolved in this order: $BASELINE_DIR, the local vault (checked for GORILLA marks
-first), then a throwaway extraction from linux-7.1.2.tar.xz with its sha256
+first), then a throwaway extraction from linux-7.2.9.tar.xz with its sha256
 verified. The tarball path is what lets this run on a bare clone and in CI, which
 have no vault.
 
@@ -30,8 +30,8 @@ Usage:  python3 make_patches.py [--check]
 import subprocess, sys, pathlib, re, shutil, tempfile, os, atexit
 
 HERE   = pathlib.Path(__file__).resolve().parent
-KVER   = "7.1.2"
-SHA    = "37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f"
+KVER   = "7.2.9"
+SHA    = "b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba"   # kernel.org sha256sums.asc, read 2026-10-10 by a GitHub runner
 OUT    = HERE / "patches"
 CHECK  = "--check" in sys.argv
 _TMP   = []   # temp dirs to clean up at exit
@@ -42,14 +42,18 @@ def find_tarball():
     for c in (os.environ.get("TARBALL_PATH"),
               HERE / f"linux-{KVER}.tar.xz",
               HERE.parent / "Kernel.Vault.Do.Not.Delete" / f"linux-{KVER}.tar.xz",
-              HERE.parent / f"linux-{KVER}.tar.xz"):
+              HERE.parent / f"linux-{KVER}.tar.xz",
+              # the usual places a person saves a download; whatever is found must still match SHA
+              pathlib.Path.home() / "Downloads" / f"linux-{KVER}.tar.xz",
+              pathlib.Path.home() / "Documents" / f"linux-{KVER}.tar.xz",
+              pathlib.Path.home() / f"linux-{KVER}.tar.xz"):
         if c and pathlib.Path(c).is_file():
             return pathlib.Path(c)
     return None
 
 
 def resolve_baseline(rels):
-    """Return a directory holding pristine 7.1.2 sources for `rels`.
+    """Return a directory holding pristine 7.2.9 sources for `rels`.
 
     Order: $BASELINE_DIR, the local vault, then a throwaway extraction from the
     tarball. The tarball path exists so this works on a bare clone and in CI,
@@ -130,7 +134,7 @@ for fname, rel in sorted(reg.items()):
 
     header = (
         f"# Gorilla Unleashed -- {rel}\n"
-        f"# Baseline: pristine linux-{KVER} (sha256 {SHA})\n"
+        f"# Baseline: pristine linux-{KVER} (sha256 {SHA or 'not yet filled in'})\n"
         f"# Apply from the kernel source root:  patch -p1 < patches/{fname}.patch\n"
         f"# Rationale: docs/{fname}.md\n"
         f"# +{plus} / -{minus} lines\n"
@@ -167,4 +171,4 @@ if CHECK:
 total_p = sum(p for _, _, p, _ in made)
 total_m = sum(m for _, _, _, m in made)
 print(f"\nwrote {len(made)} patch(es) + series to {dest}")
-print(f"total: +{total_p} / -{total_m} lines against pristine 7.1.2")
+print(f"total: +{total_p} / -{total_m} lines against pristine 7.2.9")
