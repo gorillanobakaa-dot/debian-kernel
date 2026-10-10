@@ -1,5 +1,5 @@
---- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/net/wireless/reg.c	2026-05-17 16:16:34.000000000 +0100
-+++ /home/gorilla/kernel-build-workspace/linux-7.0.9/net/wireless/reg.c	2026-05-21 12:25:10.873351222 +0100
+--- a/net/wireless/reg.c	2026-05-17 16:16:34.000000000 +0100
++++ b/net/wireless/reg.c	2026-05-21 12:25:10.873351222 +0100
 @@ -1568,43 +1568,43 @@
  {
  	u32 channel_flags = 0;

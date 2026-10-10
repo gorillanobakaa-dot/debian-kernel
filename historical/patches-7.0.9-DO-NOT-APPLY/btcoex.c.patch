@@ -1,5 +1,5 @@
---- /home/gorilla/kernel-build-workspace/ORIGINAL_KERNEL_FILES_DO_NOT_DELETE/linux-7.0.9/drivers/net/wireless/ath/ath9k/btcoex.c	2026-05-17 16:16:34.000000000 +0100
-+++ /home/gorilla/kernel-build-workspace/linux-7.0.9/drivers/net/wireless/ath/ath9k/btcoex.c	2026-05-20 13:43:48.506736525 +0100
+--- a/drivers/net/wireless/ath/ath9k/btcoex.c	2026-05-17 16:16:34.000000000 +0100
++++ b/drivers/net/wireless/ath/ath9k/btcoex.c	2026-05-20 13:43:48.506736525 +0100
 @@ -68,8 +68,8 @@
  		.bt_priority_time = 2,
  		.bt_first_slot_time = 5,

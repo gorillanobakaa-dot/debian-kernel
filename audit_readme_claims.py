@@ -3,7 +3,7 @@
 SHIPPED SOURCE. Not against another document. Not from memory."""
 import re, pathlib, subprocess
 
-P = pathlib.Path("/home/gorilla/Documents/Debian.Kernel.Work/Kernel.7.1.2.Patches")
+P = pathlib.Path(__file__).resolve().parent          # the shipped sources sit next to this script
 
 # (README section, file, human claim, regex that must match the shipped source)
 CLAIMS = [

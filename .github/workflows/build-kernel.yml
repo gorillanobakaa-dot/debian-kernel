@@ -81,6 +81,11 @@ jobs:
           fieldkit release-page check "$RUNNER_TEMP/release-page.md" --layman "$D/layman.md" --developer "$D/developer.md"
           fieldkit docs release --manifest "$D/release-docs.yaml"
 
+      - name: Before publishing - privacy of the tree and the project's tests (stops the publish step)
+        run: |
+          export KOUT="$KWORK/debs-$KVER" TARBALL_PATH="$KWORK/linux-$KVER.tar.xz"
+          fieldkit release check .fieldkit/releases/debian-kernel.yaml --before-publish
+
       - name: Publish a pre-release (not boot-tested)
         if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
