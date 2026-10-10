@@ -42,7 +42,11 @@ def find_tarball():
     for c in (os.environ.get("TARBALL_PATH"),
               HERE / f"linux-{KVER}.tar.xz",
               HERE.parent / "Kernel.Vault.Do.Not.Delete" / f"linux-{KVER}.tar.xz",
-              HERE.parent / f"linux-{KVER}.tar.xz"):
+              HERE.parent / f"linux-{KVER}.tar.xz",
+              # the usual places a person saves a download; whatever is found must still match SHA
+              pathlib.Path.home() / "Downloads" / f"linux-{KVER}.tar.xz",
+              pathlib.Path.home() / "Documents" / f"linux-{KVER}.tar.xz",
+              pathlib.Path.home() / f"linux-{KVER}.tar.xz"):
         if c and pathlib.Path(c).is_file():
             return pathlib.Path(c)
     return None

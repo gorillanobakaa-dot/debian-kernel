@@ -34,14 +34,16 @@ pass=0; fail=0
 # not match is refused outright rather than silently used (directive §3 — a wrong
 # baseline is exactly what produced this project's worst audit error).
 TARBALL=""
+# the usual places a person saves a download, by exact name; whatever is found must still match SHA_EXPECT below
 for c in "${TARBALL_PATH:-}" "$HERE/linux-${KVER}.tar.xz" \
-         "$VAULT/linux-${KVER}.tar.xz" "$(dirname "$HERE")/linux-${KVER}.tar.xz"; do
+         "$VAULT/linux-${KVER}.tar.xz" "$(dirname "$HERE")/linux-${KVER}.tar.xz" \
+         "$HOME/Downloads/linux-${KVER}.tar.xz" "$HOME/Documents/linux-${KVER}.tar.xz" "$HOME/linux-${KVER}.tar.xz"; do
     [ -n "$c" ] && [ -f "$c" ] && { TARBALL="$c"; break; }
 done
 
 if [ -z "$TARBALL" ]; then
     echo "No pristine linux-${KVER}.tar.xz found locally."
-    echo "  searched: \$TARBALL_PATH, $HERE, $VAULT"
+    echo "  searched: \$TARBALL_PATH, $HERE, $VAULT, $(dirname "$HERE"), ~/Downloads, ~/Documents, ~"
     if [ "${AUTO_FETCH:-}" = "1" ] || { [ -t 0 ] && \
          { printf '  Download it from kernel.org (~150 MB)? [y/N] '; read -r a; [ "$a" = y ] || [ "$a" = Y ]; }; }; then
         command -v curl >/dev/null || { echo "ABORT: curl not installed"; exit 1; }
