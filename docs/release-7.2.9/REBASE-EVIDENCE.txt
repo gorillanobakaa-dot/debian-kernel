@@ -1,0 +1,74 @@
+# Raw output behind the 7.2.9 release notes (2026-10-10). Pristine trees: github.com/gregkh/linux tags v7.1.2, v7.2.9.
+
+## patch -p1 --dry-run --fuzz=0 -d linux-7.2.9 < patches/<name> (the 7.1.2 patches, from git HEAD before the migration)
+### alc269.c.patch
+checking file sound/hda/codecs/realtek/alc269.c
+Hunk #1 FAILED at 4155.
+Hunk #2 FAILED at 4191.
+Hunk #3 FAILED at 7931.
+3 out of 3 hunks FAILED
+### btcoex.c.patch
+checking file drivers/net/wireless/ath/ath9k/btcoex.c
+### dell-pc.c.patch
+checking file drivers/platform/x86/dell/dell-pc.c
+### gpio.c.patch
+checking file drivers/net/wireless/ath/ath9k/gpio.c
+### hw.c.patch
+checking file drivers/net/wireless/ath/ath9k/hw.c
+Hunk #2 succeeded at 2959 (offset 3 lines).
+### init.c.patch
+checking file drivers/net/wireless/ath/ath9k/init.c
+### intel_display_params.h.patch
+checking file drivers/gpu/drm/i915/display/intel_display_params.h
+### mlme.c.patch
+checking file net/mac80211/mlme.c
+Hunk #1 succeeded at 3693 (offset 364 lines).
+### reg.c.patch
+checking file net/wireless/reg.c
+Hunk #11 succeeded at 2447 (offset 3 lines).
+Hunk #12 succeeded at 2564 (offset 3 lines).
+Hunk #13 succeeded at 2590 (offset 3 lines).
+Hunk #14 succeeded at 2600 (offset 3 lines).
+Hunk #15 succeeded at 2874 (offset 3 lines).
+Hunk #16 succeeded at 2990 (offset 3 lines).
+Hunk #17 succeeded at 3691 (offset 3 lines).
+### regd.c.patch
+checking file drivers/net/wireless/ath/regd.c
+### tcp.c.patch
+checking file net/ipv4/tcp.c
+Hunk #1 succeeded at 455 (offset -1 lines).
+Hunk #2 succeeded at 5361 (offset -6 lines).
+### tcp.h.patch
+checking file include/net/tcp.h
+### thinkpad_acpi.c.patch
+checking file drivers/platform/x86/lenovo/thinkpad_acpi.c
+
+## git diff --shortstat v7.1.2 v7.2.9 -- <file>
+net/wireless/reg.c:  1 file changed, 4 insertions(+), 1 deletion(-)
+drivers/net/wireless/ath/regd.c: 
+net/mac80211/mlme.c:  1 file changed, 884 insertions(+), 282 deletions(-)
+drivers/net/wireless/ath/ath9k/hw.c:  1 file changed, 26 insertions(+), 23 deletions(-)
+drivers/net/wireless/ath/ath9k/init.c:  1 file changed, 5 insertions(+), 7 deletions(-)
+drivers/net/wireless/ath/ath9k/gpio.c: 
+drivers/net/wireless/ath/ath9k/btcoex.c: 
+net/ipv4/tcp.c:  1 file changed, 20 insertions(+), 26 deletions(-)
+include/net/tcp.h:  1 file changed, 47 insertions(+), 49 deletions(-)
+drivers/platform/x86/sony-laptop.c: 
+drivers/gpu/drm/i915/display/intel_display_params.h: 
+drivers/platform/x86/lenovo/thinkpad_acpi.c:  1 file changed, 40 insertions(+), 2 deletions(-)
+drivers/platform/x86/dell/dell-pc.c: 
+sound/hda/codecs/realtek/alc269.c:  1 file changed, 249 insertions(+), 6 deletions(-)
+
+## grep -n ap_power_level net/mac80211/mlme.c (patched 7.2.9 tree)
+3696:	/* GORILLA UNLEASHED: an access point does not get to turn this radio
+3700:	 * immediately after association. Returning 0 leaves link->ap_power_level
+3735:		if (link->ap_power_level == new_ap_level)
+3745:		if (link->ap_power_level == new_ap_level)
+3753:	link->ap_power_level = new_ap_level;
+4675:	sdata->deflink.ap_power_level = IEEE80211_UNSET_POWER_LEVEL;
+
+## the 7.1.2 patches/README.md headline
+**14 patches · +196 / −103 lines against pristine Linux 7.1.2.**
+
+## kernel.org sha256 of linux-7.1.2.tar.xz (make_patches.py at main)
+SHA    = "37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f"

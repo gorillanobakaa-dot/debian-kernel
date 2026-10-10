@@ -1,4 +1,4 @@
-# GORILLA UNLEASHED KERNEL 7.1.2 — PATCH REGISTRY MAP
+# GORILLA UNLEASHED KERNEL 7.2.9 — PATCH REGISTRY MAP
 # Format: <filename> -> <destination_relative_path>
 #
 # ⚠ THIS FILE IS THE BUILD'S MEMORY. A patched file that is not listed here is

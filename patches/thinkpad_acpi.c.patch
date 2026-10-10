@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- drivers/platform/x86/lenovo/thinkpad_acpi.c
-# Baseline: pristine linux-7.2.9 (sha256 )
+# Baseline: pristine linux-7.2.9 (sha256 not yet filled in)
 # Apply from the kernel source root:  patch -p1 < patches/thinkpad_acpi.c.patch
 # Rationale: docs/thinkpad_acpi.c.md
 # +2 / -3 lines

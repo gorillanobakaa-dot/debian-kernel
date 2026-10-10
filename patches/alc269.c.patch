@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- sound/hda/codecs/realtek/alc269.c
-# Baseline: pristine linux-7.2.9 (sha256 )
+# Baseline: pristine linux-7.2.9 (sha256 not yet filled in)
 # Apply from the kernel source root:  patch -p1 < patches/alc269.c.patch
 # Rationale: docs/alc269.c.md
 # +27 / -1 lines

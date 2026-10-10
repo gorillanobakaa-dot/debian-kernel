@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- drivers/net/wireless/ath/ath9k/btcoex.c
-# Baseline: pristine linux-7.2.9 (sha256 )
+# Baseline: pristine linux-7.2.9 (sha256 not yet filled in)
 # Apply from the kernel source root:  patch -p1 < patches/btcoex.c.patch
 # Rationale: docs/btcoex.c.md
 # +2 / -2 lines

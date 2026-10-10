@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- net/mac80211/mlme.c
-# Baseline: pristine linux-7.2.9 (sha256 )
+# Baseline: pristine linux-7.2.9 (sha256 not yet filled in)
 # Apply from the kernel source root:  patch -p1 < patches/mlme.c.patch
 # Rationale: docs/mlme.c.md
 # +13 / -0 lines

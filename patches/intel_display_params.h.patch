@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- drivers/gpu/drm/i915/display/intel_display_params.h
-# Baseline: pristine linux-7.2.9 (sha256 )
+# Baseline: pristine linux-7.2.9 (sha256 not yet filled in)
 # Apply from the kernel source root:  patch -p1 < patches/intel_display_params.h.patch
 # Rationale: docs/intel_display_params.h.md
 # +2 / -2 lines

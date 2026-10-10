@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- drivers/platform/x86/dell/dell-pc.c
-# Baseline: pristine linux-7.2.9 (sha256 )
+# Baseline: pristine linux-7.2.9 (sha256 not yet filled in)
 # Apply from the kernel source root:  patch -p1 < patches/dell-pc.c.patch
 # Rationale: docs/dell-pc.c.md
 # +8 / -6 lines

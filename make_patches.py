@@ -130,7 +130,7 @@ for fname, rel in sorted(reg.items()):
 
     header = (
         f"# Gorilla Unleashed -- {rel}\n"
-        f"# Baseline: pristine linux-{KVER} (sha256 {SHA})\n"
+        f"# Baseline: pristine linux-{KVER} (sha256 {SHA or 'not yet filled in'})\n"
         f"# Apply from the kernel source root:  patch -p1 < patches/{fname}.patch\n"
         f"# Rationale: docs/{fname}.md\n"
         f"# +{plus} / -{minus} lines\n"

@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- net/ipv4/tcp.c
-# Baseline: pristine linux-7.2.9 (sha256 )
+# Baseline: pristine linux-7.2.9 (sha256 not yet filled in)
 # Apply from the kernel source root:  patch -p1 < patches/tcp.c.patch
 # Rationale: docs/tcp.c.md
 # +7 / -8 lines

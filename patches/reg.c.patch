@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- net/wireless/reg.c
-# Baseline: pristine linux-7.2.9 (sha256 )
+# Baseline: pristine linux-7.2.9 (sha256 not yet filled in)
 # Apply from the kernel source root:  patch -p1 < patches/reg.c.patch
 # Rationale: docs/reg.c.md
 # +87 / -55 lines
