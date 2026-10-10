@@ -98,7 +98,7 @@ Machine: Ubuntu 24.04 container · 4 processor cores · gcc 13.3.0 · GNU ld 2.4
 | Patches changing exactly the same lines as on 7.1.2 | `13` of `13` |
 | Patch set size against pristine 7.2.9 | `13` patches, `+189 / -103` lines |
 | Shipped files rebuilt byte for byte from pristine 7.2.9 + patches | `14` of `14` |
-| sha256 of `linux-7.2.9.tar.xz` | not measured (kernel.org unreachable) |
+| sha256 of `linux-7.2.9.tar.xz` | `b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba` (kernel.org's sha256sums.asc, read by a GitHub runner; its download matched) |
 
 ## Configuration
 

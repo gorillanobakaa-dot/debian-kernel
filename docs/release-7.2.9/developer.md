@@ -6,10 +6,12 @@ A rebase of the Gorilla Unleashed patch set (13 patches, `+189 / -103` against p
 
 ## Baseline provenance
 
-kernel.org was unreachable from the build machine (egress policy), so the pristine trees are the `v7.1.2` and `v7.2.9` tags of github.com/gregkh/linux, fetched shallow.
+**Release packages** are built by the project's CI, which runs the Gorilla Fieldkit `debian-kernel` pipeline on a GitHub runner: its `fetch` stage downloads kernel.org's `linux-7.2.9.tar.xz` and checks it against kernel.org's `sha256sums.asc` before anything is built. The checksums of the packages a release carries are on its page under "Package checksums" and in its `SHA256SUMS` file.
+
+**The migration itself** was done on a cloud machine that could not reach kernel.org (egress policy), so its pristine trees are the `v7.1.2` and `v7.2.9` tags of github.com/gregkh/linux, fetched shallow.
 
 - The mirror's `v7.1.2` with the old patches reproduces all 14 shipped 7.1.2 files byte for byte. The shipped files were made from the sha256-verified kernel.org tarball (`37198c93…5883f`), so the mirror equals that tarball for every file the patch set touches.
-- The sha256 of `linux-7.2.9.tar.xz` is **not filled in**. `make_patches.py` (`SHA`) and `verify_patches.sh` (`SHA_EXPECT`) carry an empty value, which makes both refuse every tarball until it is filled from kernel.org's `sha256sums.asc`. This fails closed by design.
+- The sha256 of `linux-7.2.9.tar.xz` is `b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba`, read from kernel.org's `sha256sums.asc` by a GitHub runner, whose download of the tarball matched it. It is in `make_patches.py` (`SHA`) and `verify_patches.sh` (`SHA_EXPECT`). The signature on `sha256sums.asc` was not checked.
 
 ## The rebase, file by file
 
@@ -17,7 +19,7 @@ kernel.org was unreachable from the build machine (egress policy), so the pristi
 
 | Patch | Result on 7.2.9 | Upstream change to the file, 7.1.2 → 7.2.9 |
 |---|---|---|
-| `reg.c` | applies, offset +3 on hunks 11–15 | `wdev_running()` refactor; new `NL80211_IFTYPE_PD` case in `reg_wdev_chan_valid()` |
+| `reg.c` | applies, offset +3 on hunks 11–17 | `wdev_running()` refactor; new `NL80211_IFTYPE_PD` case in `reg_wdev_chan_valid()` |
 | `regd.c` | applies | none |
 | `mlme.c` | applies, offset +364 | +884 / -282; `ap_power_level` is still written only by the function our `return 0` short-circuits (`mlme.c` ≈3693) |
 | `hw.c` | applies, offset +3 on hunk 2 | +26 / -23, not in the patched lines |
@@ -48,24 +50,13 @@ kernel.org was unreachable from the build machine (egress policy), so the pristi
 
 ## Build
 
-Pipeline: Gorilla Fieldkit `debian-kernel`, stages `deps → extract → config → build → rpm → collect`, on Ubuntu 24.04, gcc 13.3.0, 4 cores. `KCFLAGS="-O3 -pipe"`, `bindeb-pkg`, `KDEB_PKGVERSION=7.2.9`, then `binrpm-pkg` with `LOCALVERSION` read back from `include/config/kernel.release`.
+The first 7.2.9 build, on the cloud machine (the numbers below are that build's; a release's own build differs in its name's date and time and in its checksums). Pipeline: Gorilla Fieldkit `debian-kernel`, stages `deps → extract → config → build → rpm → collect`, on Ubuntu 24.04, gcc 13.3.0, 4 cores. `KCFLAGS="-O3 -pipe"`, `bindeb-pkg`, `KDEB_PKGVERSION=7.2.9`, then `binrpm-pkg` with `LOCALVERSION` read back from `include/config/kernel.release`.
 
 - uname: `7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28` (48 / 64).
 - `bindeb-pkg` wall time: about 16 minutes.
 - The RPM kernel has the same config byte for byte as the `.deb` kernel. The decompressed images are 72,940,392 bytes each and differ in 69 bytes: `binrpm-pkg` re-links with build number `#2` and a new build timestamp.
 
-### Package checksums
-
-```
-0ae248ea4df86217e1fcea04e61fdaac807992ca0ee8bdf40b116c080d42604c  linux-image-7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28_7.2.9_amd64.deb
-2a92b899c5b2f3a866b4e992a56f365bcc5285e6383c2bb1afa750b347019c9e  linux-headers-7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28_7.2.9_amd64.deb
-737456ae9bf0e02a110f55ccb4614d03c6018fd2104c89adff415aa7aea708d2  linux-libc-dev_7.2.9_amd64.deb
-19b558faff79d9e81796f3ff85d027ecc52351c8222e58d83109a8f4e3c75e37  kernel-7.2.9_unleashed.gorilla_eapd_bbr_26.10.10__13.28-2.x86_64.rpm
-a942c8ba1d8bc39448444a86274440ab6214e82499b4c7219263b5b6f4c02b66  kernel-devel-7.2.9_unleashed.gorilla_eapd_bbr_26.10.10__13.28-2.x86_64.rpm
-20b96749a38d35b4f88c5341f0d0ac9ed2d03f6d9629aa032ae7d6d60dd05121  kernel-headers-7.2.9_unleashed.gorilla_eapd_bbr_26.10.10__13.28-2.x86_64.rpm
-```
-
-Install `linux-image` and `linux-headers` only; never `linux-libc-dev` (it replaces the system's userspace kernel headers).
+Releases carry `linux-image` and `linux-headers` (.deb) and `kernel` and `kernel-devel` (.rpm). `linux-libc-dev` and the `kernel-headers` RPM are left out on purpose: they replace the system's userspace kernel headers.
 
 ## Reproduce
 
@@ -79,6 +70,5 @@ fieldkit pipeline run debian-kernel --var version=7.2.9
 ## Known gaps and next actions
 
 - **Not boot-tested.** Next action: install on the VAIO SVE14A3AJ beside the current kernel; record taint, failed units, `iw reg get`, per-channel TX ceiling and the ALC269 log line in `docs/VERIFIED_MEASUREMENTS.md`.
-- **sha256 of `linux-7.2.9.tar.xz` missing.** Next action: fill `SHA` and `SHA_EXPECT` from kernel.org, then run `verify_patches.sh` against the real tarball.
 - **Build is not reproducible bit for bit across the .deb and .rpm** (build number and timestamp). Next action: set `KBUILD_BUILD_TIMESTAMP`, `KBUILD_BUILD_VERSION`, `KBUILD_BUILD_USER` and `KBUILD_BUILD_HOST` in both Fieldkit stages.
 - **README.md and CHANGELOG.md history sections still describe 7.0.9 → 7.1.2.** They are history and remain accurate for that step.

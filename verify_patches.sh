@@ -22,7 +22,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 KVER="7.2.9"
-SHA_EXPECT=""   # linux-7.2.9.tar.xz from kernel.org sha256sums.asc: NOT YET FILLED; empty refuses every tarball
+SHA_EXPECT="b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba"
 URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KVER}.tar.xz"
 
 G=$'\033[32m'; R=$'\033[31m'; N=$'\033[0m'
@@ -110,7 +110,9 @@ echo "── 3. registry ↔ patch-set agreement ──"
 for rel in "${RELS[@]}"; do
     f=$(grep -E "\->[[:space:]]*${rel//\//\\/}$" "$HERE/PATCHED_FILES_PATH_REGISTRY.txt" | awk '{print $1}')
     if [ -f "$HERE/patches/$f.patch" ]; then :
-    elif cmp -s "$VAULT/linux-7.2.9/$rel" "$HERE/$f" 2>/dev/null; then
+    # against the pristine tree just extracted, not the maintainer's vault: a clone or a CI runner has no vault, and
+    # sony-laptop.c (shipped unchanged, so no patch) failed there as "in the registry but has no patch" (2026-10-10)
+    elif cmp -s "$SRC/$rel" "$HERE/$f" 2>/dev/null; then
         echo "  note: $f is identical to upstream (no patch needed)"
     else
         echo "  ${R}FAIL${N} $f is in the registry but has no patch"; fail=$((fail+1))

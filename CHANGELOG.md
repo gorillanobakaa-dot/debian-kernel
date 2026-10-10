@@ -10,8 +10,8 @@ The full notes, plain language first and developer detail after, are in `RELEASE
 
 **For developers:** 13 patches, `+189 / -103` against pristine 7.2.9; 13 of 13 change the same lines as on 7.1.2;
 14 of 14 shipped files rebuilt byte for byte; config 248 of 248. The baseline came from github.com/gregkh/linux
-because kernel.org was unreachable, so the 7.2.9 tarball sha256 is still empty in `make_patches.py` and
-`verify_patches.sh`. Evidence: `docs/release-7.2.9/REBASE-EVIDENCE.txt` and `docs/VERIFIED_MEASUREMENTS.md`.
+because kernel.org was unreachable from the migration machine; the 7.2.9 tarball sha256 (`b4c5dfbe…d8ba`) was
+read from kernel.org by a GitHub runner, and release packages are built by CI from kernel.org's tarball. Evidence: `docs/release-7.2.9/REBASE-EVIDENCE.txt` and `docs/VERIFIED_MEASUREMENTS.md`.
 
 ---
 

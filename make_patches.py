@@ -31,7 +31,7 @@ import subprocess, sys, pathlib, re, shutil, tempfile, os, atexit
 
 HERE   = pathlib.Path(__file__).resolve().parent
 KVER   = "7.2.9"
-SHA    = ""  # linux-7.2.9.tar.xz from kernel.org sha256sums.asc: NOT YET FILLED (the 2026-10-10 cloud session could not reach kernel.org); with it empty every tarball is refused
+SHA    = "b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba"   # kernel.org sha256sums.asc, read 2026-10-10 by a GitHub runner
 OUT    = HERE / "patches"
 CHECK  = "--check" in sys.argv
 _TMP   = []   # temp dirs to clean up at exit

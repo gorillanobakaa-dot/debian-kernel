@@ -72,3 +72,55 @@ sound/hda/codecs/realtek/alc269.c:  1 file changed, 249 insertions(+), 6 deletio
 
 ## kernel.org sha256 of linux-7.1.2.tar.xz (make_patches.py at main)
 SHA    = "37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f"
+
+## fieldkit kernel migrate-check --project <debian-kernel at main> --old v7.1.2 --new v7.2.9
+baseline: 14/14 shipped files rebuilt byte for byte from the old tree
+  fails    alc269.c.patch hunks [1, 2, 3] FAILED
+  applies  btcoex.c.patch
+  applies  dell-pc.c.patch
+  applies  gpio.c.patch
+  offset   hw.c.patch offsets [(2, 3)]
+  applies  init.c.patch
+  applies  intel_display_params.h.patch
+  offset   mlme.c.patch offsets [(1, 364)]
+  offset   reg.c.patch offsets [(11, 3), (12, 3), (13, 3), (14, 3), (15, 3), (16, 3), (17, 3)]
+  applies  regd.c.patch
+  offset   tcp.c.patch offsets [(1, -1), (2, -6)]
+  applies  tcp.h.patch
+  applies  thinkpad_acpi.c.patch
+upstream changes in the registry files:
+  net/wireless/reg.c: +4 / -1
+  drivers/net/wireless/ath/regd.c: +0 / -0
+  net/mac80211/mlme.c: +895 / -293
+  drivers/net/wireless/ath/ath9k/hw.c: +27 / -24
+  drivers/net/wireless/ath/ath9k/init.c: +5 / -7
+  drivers/net/wireless/ath/ath9k/gpio.c: +0 / -0
+  drivers/net/wireless/ath/ath9k/btcoex.c: +0 / -0
+  net/ipv4/tcp.c: +20 / -26
+  include/net/tcp.h: +49 / -51
+  drivers/platform/x86/sony-laptop.c: +0 / -0
+  drivers/gpu/drm/i915/display/intel_display_params.h: +0 / -0
+  drivers/platform/x86/lenovo/thinkpad_acpi.c: +40 / -2
+  drivers/platform/x86/dell/dell-pc.c: +0 / -0
+  sound/hda/codecs/realtek/alc269.c: +249 / -6
+DO: port alc269.c.patch: hunks [1, 2, 3] do not fit v7.2.9. Put the SAME added and removed lines at the same logical anchor in the new file, ship the new file at the project root, regenerate the patches, then: fieldkit kernel migrate-verify
+12 of 13 patches fit the new tree
+NEXT: port alc269.c.patch: hunks [1, 2, 3] do not fit v7.2.9. Put the SAME added and removed lines at the same logical anchor in the new file, ship the new file at the project root, regenerate the patches, then: fieldkit kernel migrate-verify
+
+## fieldkit kernel migrate-verify --project <debian-kernel at migrate-7.2.9> --new v7.2.9 --old-patches <main's patches/>
+  same alc269.c.patch
+  same btcoex.c.patch
+  same dell-pc.c.patch
+  same gpio.c.patch
+  same hw.c.patch
+  same init.c.patch
+  same intel_display_params.h.patch
+  same mlme.c.patch
+  same reg.c.patch
+  same regd.c.patch
+  same tcp.c.patch
+  same tcp.h.patch
+  same thinkpad_acpi.c.patch
+same changed lines: 13/13; rebuilt byte for byte: 14/14; 13 patches, +189 / -103
+MIGRATION PROVEN
+NEXT: the migration is proven; build it: fieldkit pipeline run debian-kernel --var version=NEW

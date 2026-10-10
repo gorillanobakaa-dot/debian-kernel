@@ -53,9 +53,9 @@ The second risk is the radio. This kernel lets the Wi-Fi card use channels and p
 
 ### Before you trust it
 
-1. **Check the download is the one that was built.** Open a terminal (see "How to use this", step 1). Type `sha256sum` followed by a space and the name of the file you downloaded, then press Enter. The long string it prints must be exactly the one listed for that file in the developer part of this page, under "Package checksums". **Pass:** every character matches. **Fail:** any character differs; delete the file and do not install it.
+1. **Check the download is the one that was built.** Open a terminal (see "How to use this", step 1). Download the file `SHA256SUMS` from this page too, into the same folder. It lists a long code (a checksum) for every package this release carries, and the same list is printed on this page under "Package checksums". Type `sha256sum -c SHA256SUMS --ignore-missing` and press Enter. **Pass:** every file you downloaded is listed with `OK`. **Fail:** any line says `FAILED`; delete that file and do not install it.
 2. **Check the patches are the whole story.** On the project page, the folder `patches` holds every change made to Linux, 13 small files. The developer part of this page says how they were checked: applied to an untouched copy of Linux 7.2.9, they rebuild the shipped source files exactly. **Pass:** the developer part says "14 of 14" byte for byte. **Fail:** any other number; do not install.
-3. **After installing, check you are running it.** Restart, choose the new kernel, open a terminal, type `uname -r` and press Enter. **Pass:** it prints `7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28`. **Fail:** it prints anything else; you are still on your old kernel, which is safe.
+3. **After installing, check you are running it.** Restart, choose the new kernel, open a terminal, type `uname -r` and press Enter. **Pass:** it prints a name that starts with `7.2.9-unleashed.gorilla-eapd-bbr-`; the end of the name is the date and time of the build. **Fail:** it prints anything else; you are still on your old kernel, which is safe.
 4. **Ask whether it has been started on real hardware yet.** This page says it has not. If a later update to this page says the maintainer has booted it on the VAIO, that is the moment the main risk drops.
 
 ### The big picture
@@ -90,7 +90,7 @@ Moving to Linux 7.2.9 is like the car maker releasing a newer base engine. The G
 
 - **The ThinkPad and Dell changes are carried but switched off.** They are in the patch set, and they move with every update, but the settings this kernel is built with do not include those drivers. On a ThinkPad or a Dell they do nothing. This was already true for 7.1.2.
 - **The RPM and the .deb are not identical files.** Packing for Fedora-type systems re-stamped the kernel with a new build number and time. The working parts are the same; only that stamp differs.
-- **"Linux 7.2.9" came from a copy on GitHub, not from kernel.org itself.** The build machine could not reach kernel.org. The same copy's older 7.1.2 matched the official 7.1.2 exactly for every file the patches touch, which is strong evidence it is faithful, but the official checksum for 7.2.9 has not been compared yet.
+- **The packages on this page were built on GitHub's machines, from kernel.org's own copy of Linux.** That copy is checked against the code kernel.org publishes for it before anything is built. The first build of 7.2.9, made while moving the patches, used a copy of Linux from GitHub, because that machine could not reach kernel.org; the numbers measured on it are in the project's measurements file and say so.
 - **What this cannot do.** It cannot make a slow processor faster, add memory, or fix a failing disk. It does not make Wi-Fi faster if the router is the limit. It does not protect you from anything; it removes limits, it does not add guards. It has not been measured for speed, battery or heat on this version: every such number is "not measured".
 
 ### What this means for you
@@ -108,7 +108,7 @@ Restart the computer. In the start-up menu, choose your previous kernel (on Ubun
 To remove it completely on Debian or Ubuntu, open a terminal and type the command below, then press Enter. It asks for your password.
 
 ```bash
-sudo apt remove linux-image-7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28
+sudo apt remove 'linux-image-7.2.9-unleashed*'
 ```
 
 Without the start-up menu there would be no way back from a kernel that does not start, short of a rescue disk. That is why this guide asks you to check the menu works before installing.
@@ -125,21 +125,21 @@ Without the start-up menu there would be no way back from a kernel that does not
 3. Check each file, as in "Before you trust it", step 1. Type the line below and press Enter.
 
    ```bash
-   sha256sum linux-image-7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28_7.2.9_amd64.deb
+   sha256sum -c SHA256SUMS --ignore-missing
    ```
 
-   **Pass:** it prints `0ae248ea4df86217e1fcea04e61fdaac807992ca0ee8bdf40b116c080d42604c` followed by the file name. **Fail:** a different code; stop here.
+   **Pass:** each file you downloaded is followed by `OK`. **Fail:** any line says `FAILED`; stop here.
 4. On Debian or Ubuntu, install the image and the headers (never `linux-libc-dev`). Type the line below and press Enter, then type your password and press Enter.
 
    ```bash
-   sudo apt install ./linux-image-7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28_7.2.9_amd64.deb ./linux-headers-7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28_7.2.9_amd64.deb
+   sudo apt install ./linux-image-7.2.9-unleashed*.deb ./linux-headers-7.2.9-unleashed*.deb
    ```
 
    **Pass:** the last lines mention updating GRUB and no line starts with `E:`. **Fail:** a line starting with `E:`; nothing was installed.
 5. On Fedora and similar systems, use the RPM instead. Type the line below and press Enter.
 
    ```bash
-   sudo dnf install ./kernel-7.2.9_unleashed.gorilla_eapd_bbr_26.10.10__13.28-2.x86_64.rpm
+   sudo dnf install ./kernel-7.2.9_unleashed*.x86_64.rpm
    ```
 
 6. Restart, choose the new kernel in the start-up menu, and check it as in "Before you trust it", step 3.
@@ -176,10 +176,12 @@ A rebase of the Gorilla Unleashed patch set (13 patches, `+189 / -103` against p
 
 ### Baseline provenance
 
-kernel.org was unreachable from the build machine (egress policy), so the pristine trees are the `v7.1.2` and `v7.2.9` tags of github.com/gregkh/linux, fetched shallow.
+**Release packages** are built by the project's CI, which runs the Gorilla Fieldkit `debian-kernel` pipeline on a GitHub runner: its `fetch` stage downloads kernel.org's `linux-7.2.9.tar.xz` and checks it against kernel.org's `sha256sums.asc` before anything is built. The checksums of the packages a release carries are on its page under "Package checksums" and in its `SHA256SUMS` file.
+
+**The migration itself** was done on a cloud machine that could not reach kernel.org (egress policy), so its pristine trees are the `v7.1.2` and `v7.2.9` tags of github.com/gregkh/linux, fetched shallow.
 
 - The mirror's `v7.1.2` with the old patches reproduces all 14 shipped 7.1.2 files byte for byte. The shipped files were made from the sha256-verified kernel.org tarball (`37198c93…5883f`), so the mirror equals that tarball for every file the patch set touches.
-- The sha256 of `linux-7.2.9.tar.xz` is **not filled in**. `make_patches.py` (`SHA`) and `verify_patches.sh` (`SHA_EXPECT`) carry an empty value, which makes both refuse every tarball until it is filled from kernel.org's `sha256sums.asc`. This fails closed by design.
+- The sha256 of `linux-7.2.9.tar.xz` is `b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba`, read from kernel.org's `sha256sums.asc` by a GitHub runner, whose download of the tarball matched it. It is in `make_patches.py` (`SHA`) and `verify_patches.sh` (`SHA_EXPECT`). The signature on `sha256sums.asc` was not checked.
 
 ### The rebase, file by file
 
@@ -187,7 +189,7 @@ kernel.org was unreachable from the build machine (egress policy), so the pristi
 
 | Patch | Result on 7.2.9 | Upstream change to the file, 7.1.2 → 7.2.9 |
 |---|---|---|
-| `reg.c` | applies, offset +3 on hunks 11–15 | `wdev_running()` refactor; new `NL80211_IFTYPE_PD` case in `reg_wdev_chan_valid()` |
+| `reg.c` | applies, offset +3 on hunks 11–17 | `wdev_running()` refactor; new `NL80211_IFTYPE_PD` case in `reg_wdev_chan_valid()` |
 | `regd.c` | applies | none |
 | `mlme.c` | applies, offset +364 | +884 / -282; `ap_power_level` is still written only by the function our `return 0` short-circuits (`mlme.c` ≈3693) |
 | `hw.c` | applies, offset +3 on hunk 2 | +26 / -23, not in the patched lines |
@@ -218,24 +220,13 @@ kernel.org was unreachable from the build machine (egress policy), so the pristi
 
 ### Build
 
-Pipeline: Gorilla Fieldkit `debian-kernel`, stages `deps → extract → config → build → rpm → collect`, on Ubuntu 24.04, gcc 13.3.0, 4 cores. `KCFLAGS="-O3 -pipe"`, `bindeb-pkg`, `KDEB_PKGVERSION=7.2.9`, then `binrpm-pkg` with `LOCALVERSION` read back from `include/config/kernel.release`.
+The first 7.2.9 build, on the cloud machine (the numbers below are that build's; a release's own build differs in its name's date and time and in its checksums). Pipeline: Gorilla Fieldkit `debian-kernel`, stages `deps → extract → config → build → rpm → collect`, on Ubuntu 24.04, gcc 13.3.0, 4 cores. `KCFLAGS="-O3 -pipe"`, `bindeb-pkg`, `KDEB_PKGVERSION=7.2.9`, then `binrpm-pkg` with `LOCALVERSION` read back from `include/config/kernel.release`.
 
 - uname: `7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28` (48 / 64).
 - `bindeb-pkg` wall time: about 16 minutes.
 - The RPM kernel has the same config byte for byte as the `.deb` kernel. The decompressed images are 72,940,392 bytes each and differ in 69 bytes: `binrpm-pkg` re-links with build number `#2` and a new build timestamp.
 
-#### Package checksums
-
-```
-0ae248ea4df86217e1fcea04e61fdaac807992ca0ee8bdf40b116c080d42604c  linux-image-7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28_7.2.9_amd64.deb
-2a92b899c5b2f3a866b4e992a56f365bcc5285e6383c2bb1afa750b347019c9e  linux-headers-7.2.9-unleashed.gorilla-eapd-bbr-26.10.10--13.28_7.2.9_amd64.deb
-737456ae9bf0e02a110f55ccb4614d03c6018fd2104c89adff415aa7aea708d2  linux-libc-dev_7.2.9_amd64.deb
-19b558faff79d9e81796f3ff85d027ecc52351c8222e58d83109a8f4e3c75e37  kernel-7.2.9_unleashed.gorilla_eapd_bbr_26.10.10__13.28-2.x86_64.rpm
-a942c8ba1d8bc39448444a86274440ab6214e82499b4c7219263b5b6f4c02b66  kernel-devel-7.2.9_unleashed.gorilla_eapd_bbr_26.10.10__13.28-2.x86_64.rpm
-20b96749a38d35b4f88c5341f0d0ac9ed2d03f6d9629aa032ae7d6d60dd05121  kernel-headers-7.2.9_unleashed.gorilla_eapd_bbr_26.10.10__13.28-2.x86_64.rpm
-```
-
-Install `linux-image` and `linux-headers` only; never `linux-libc-dev` (it replaces the system's userspace kernel headers).
+Releases carry `linux-image` and `linux-headers` (.deb) and `kernel` and `kernel-devel` (.rpm). `linux-libc-dev` and the `kernel-headers` RPM are left out on purpose: they replace the system's userspace kernel headers.
 
 ### Reproduce
 
@@ -249,6 +240,5 @@ fieldkit pipeline run debian-kernel --var version=7.2.9
 ### Known gaps and next actions
 
 - **Not boot-tested.** Next action: install on the VAIO SVE14A3AJ beside the current kernel; record taint, failed units, `iw reg get`, per-channel TX ceiling and the ALC269 log line in `docs/VERIFIED_MEASUREMENTS.md`.
-- **sha256 of `linux-7.2.9.tar.xz` missing.** Next action: fill `SHA` and `SHA_EXPECT` from kernel.org, then run `verify_patches.sh` against the real tarball.
 - **Build is not reproducible bit for bit across the .deb and .rpm** (build number and timestamp). Next action: set `KBUILD_BUILD_TIMESTAMP`, `KBUILD_BUILD_VERSION`, `KBUILD_BUILD_USER` and `KBUILD_BUILD_HOST` in both Fieldkit stages.
 - **README.md and CHANGELOG.md history sections still describe 7.0.9 → 7.1.2.** They are history and remain accurate for that step.

@@ -19,14 +19,14 @@ here, and every line is explained in [`../docs/`](../docs).
 This does **not** check that the patches "look right". It:
 
 1. extracts a fresh copy of the affected files **from `linux-7.2.9.tar.xz`**
-   (sha256 **not yet filled in**: until it is, the script refuses every tarball),
+   (sha256 `b4c5dfbe51a364a6c7f03869200f88c8e1f77403539005f14b7fc6bc91b8d8ba`),
 2. applies every patch with `patch -p1`, and
 3. compares the result **byte-for-byte** against the source files this repo ships.
 
 Step 3 is the one that matters. "It applied" only proves the hunks fit. **Byte
 identity proves the patch set is complete** — that nothing in the shipped sources
 came from somewhere the patches don't describe. Current result: **14/14 byte for byte** against a pristine 7.2.9
-checkout (github.com/gregkh/linux, tag v7.2.9); the tarball run waits for the sha256.
+checkout (github.com/gregkh/linux, tag v7.2.9); the project's CI repeats it against kernel.org's tarball.
 
 The baseline is the **tarball**, never a directory. A directory can be quietly
 patched and then mistaken for pristine; that is not hypothetical here — it is
