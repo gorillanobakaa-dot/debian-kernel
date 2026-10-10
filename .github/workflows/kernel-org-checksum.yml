@@ -1,0 +1,34 @@
+name: kernel.org checksum and tarball proof
+
+# Runs on GitHub's machines, which can reach kernel.org (the cloud session that migrated 7.2.9 could not).
+# 1. Downloads kernel.org's signed sha256sums.asc and prints the line for the tarball.
+# 2. Downloads the tarball and checks it against that line (fails on any mismatch).
+# 3. Runs make_patches.py --check and verify_patches.sh against the official tarball. Until SHA / SHA_EXPECT are
+#    filled in from step 1, step 3 fails closed by design; after that it is the full byte-for-byte proof.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checksum:
+    runs-on: ubuntu-latest
+    env:
+      KVER: "7.2.9"
+    steps:
+      - uses: actions/checkout@v4
+      - name: kernel.org sha256sums.asc (the line for the tarball)
+        run: |
+          curl -fsSL -o sha256sums.asc "https://cdn.kernel.org/pub/linux/kernel/v7.x/sha256sums.asc"
+          grep " linux-${KVER}.tar.xz$" sha256sums.asc | tee expected.txt
+          test -s expected.txt
+      - name: Download the tarball and check it against kernel.org's line
+        run: |
+          curl -fsSL -o "linux-${KVER}.tar.xz" "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KVER}.tar.xz"
+          sha256sum -c expected.txt
+      - name: Patch set against the official tarball
+        run: |
+          python3 make_patches.py --check
+          TARBALL_PATH="./linux-${KVER}.tar.xz" ./verify_patches.sh
