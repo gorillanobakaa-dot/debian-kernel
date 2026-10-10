@@ -3,7 +3,7 @@
 # Prove the patch set actually works — against the TARBALL, not a directory.
 # =============================================================================
 # Three things are checked, in increasing strength:
-#   1. every patch applies cleanly to pristine 7.1.2 (no fuzz, no rejects)
+#   1. every patch applies cleanly to pristine 7.2.9 (no fuzz, no rejects)
 #   2. the patched result is BYTE-IDENTICAL to the file we ship
 #   3. every registry entry has a patch, and vice versa
 #
@@ -11,7 +11,7 @@
 # output proves the patch set is COMPLETE — nothing in the shipped file came
 # from somewhere the patches don't describe.
 #
-# The baseline is extracted fresh from linux-7.1.2.tar.xz every run. A directory
+# The baseline is extracted fresh from linux-7.2.9.tar.xz every run. A directory
 # can be quietly patched; a tarball cannot. That distinction previously cost this
 # project an entire wrong audit conclusion.
 # =============================================================================
@@ -21,8 +21,8 @@ VAULT="$(dirname "$HERE")/Kernel.Vault.Do.Not.Delete"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-KVER="7.1.2"
-SHA_EXPECT="37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f"
+KVER="7.2.9"
+SHA_EXPECT=""   # linux-7.2.9.tar.xz from kernel.org sha256sums.asc: NOT YET FILLED; empty refuses every tarball
 URL="https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KVER}.tar.xz"
 
 G=$'\033[32m'; R=$'\033[31m'; N=$'\033[0m'
@@ -73,9 +73,9 @@ echo
 mapfile -t RELS < <(grep -E '^[A-Za-z0-9_.\-]+[[:space:]]*->' "$HERE/PATCHED_FILES_PATH_REGISTRY.txt" \
                     | sed 's/.*->[[:space:]]*//')
 echo "extracting ${#RELS[@]} file(s) from the tarball (decompressing, please wait)..."
-printf 'linux-7.1.2/%s\n' "${RELS[@]}" > "$WORK/filelist"
+printf 'linux-7.2.9/%s\n' "${RELS[@]}" > "$WORK/filelist"
 tar -xJf "$TARBALL" -C "$WORK" -T "$WORK/filelist" 2>/dev/null
-SRC="$WORK/linux-7.1.2"
+SRC="$WORK/linux-7.2.9"
 [ -d "$SRC" ] || { echo "ABORT: extraction produced no tree"; exit 1; }
 echo "extracted to a throwaway tree"
 echo
@@ -110,7 +110,7 @@ echo "── 3. registry ↔ patch-set agreement ──"
 for rel in "${RELS[@]}"; do
     f=$(grep -E "\->[[:space:]]*${rel//\//\\/}$" "$HERE/PATCHED_FILES_PATH_REGISTRY.txt" | awk '{print $1}')
     if [ -f "$HERE/patches/$f.patch" ]; then :
-    elif cmp -s "$VAULT/linux-7.1.2/$rel" "$HERE/$f" 2>/dev/null; then
+    elif cmp -s "$VAULT/linux-7.2.9/$rel" "$HERE/$f" 2>/dev/null; then
         echo "  note: $f is identical to upstream (no patch needed)"
     else
         echo "  ${R}FAIL${N} $f is in the registry but has no patch"; fail=$((fail+1))

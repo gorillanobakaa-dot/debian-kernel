@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       kernel_version:
-        description: 'Kernel version to build (e.g. 7.1.2)'
+        description: 'Kernel version to build (e.g. 7.2.9)'
         required: false
-        default: '7.1.2'
+        default: '7.2.9'
 
 jobs:
   build-kernel:
-    name: Build Linux ${{ github.event.inputs.kernel_version || '7.1.2' }} Unleashed
+    name: Build Linux ${{ github.event.inputs.kernel_version || '7.2.9' }} Unleashed
     runs-on: ubuntu-latest
 
     # This gives the workflow permission to create a GitHub Release
@@ -52,7 +52,7 @@ jobs:
       # ── Step 3: Download upstream kernel source ───────────────────────────────
       - name: 🌐 Download Linux Kernel Source
         run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.2.9' }}"
           echo "Downloading linux-${KERNEL_VER}.tar.xz..."
           curl -L -o "linux-${KERNEL_VER}.tar.xz" \
             "https://cdn.kernel.org/pub/linux/kernel/v7.x/linux-${KERNEL_VER}.tar.xz"
@@ -63,14 +63,14 @@ jobs:
       # source file was edited without regenerating its patch.
       - name: 🔍 Verify patch set integrity
         run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.2.9' }}"
           python3 make_patches.py --check
           TARBALL_PATH="./linux-${KERNEL_VER}.tar.xz" ./verify_patches.sh
 
       # ── Step 4: Apply the source patches ─────────────────────────────────────
       - name: 🩹 Apply Gorilla source patches
         run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.2.9' }}"
           python3 universal_freedom_installer.py "./linux-${KERNEL_VER}"
           # Verify the artifact, never the exit code (project directive §2).
           n=$(grep -rl GORILLA "./linux-${KERNEL_VER}/net/wireless/reg.c" \
@@ -86,7 +86,7 @@ jobs:
       # disagrees with the documented build is worse than no CI artifact.
       - name: ⚙️ Apply custom kernel configuration + audited change-set
         run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.2.9' }}"
           cp kernel.config "linux-${KERNEL_VER}/.config"
           python3 kernel_config_injector.py "./linux-${KERNEL_VER}"
           make -C "linux-${KERNEL_VER}" olddefconfig
@@ -100,7 +100,7 @@ jobs:
       # ── Step 6: Compile the kernel ───────────────────────────────────────────
       - name: 🔥 Compile Kernel (Multi-threaded)
         run: |
-          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.1.2' }}"
+          KERNEL_VER="${{ github.event.inputs.kernel_version || '7.2.9' }}"
           # Name via the 64-char-guarded namer, NOT a hand-written string. The
           # old hardcoded name still said "+60db" -- the King Kong audio hack that
           # was replaced by the EAPD fixup in June -- so every CI artifact was
@@ -129,8 +129,8 @@ jobs:
       - name: 🚀 Create GitHub Release with .deb Packages
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "v${{ github.event.inputs.kernel_version || '7.1.2' }}-unleashed-${{ github.run_number }}"
-          name: "🦍 Linux ${{ github.event.inputs.kernel_version || '7.1.2' }} Unleashed — Build #${{ github.run_number }}"
+          tag_name: "v${{ github.event.inputs.kernel_version || '7.2.9' }}-unleashed-${{ github.run_number }}"
+          name: "🦍 Linux ${{ github.event.inputs.kernel_version || '7.2.9' }} Unleashed — Build #${{ github.run_number }}"
           body: |
             ## 🦍 Gorilla Unleashed Kernel Build
 

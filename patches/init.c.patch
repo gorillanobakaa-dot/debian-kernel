@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- drivers/net/wireless/ath/ath9k/init.c
-# Baseline: pristine linux-7.1.2 (sha256 37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f)
+# Baseline: pristine linux-7.2.9 (sha256 )
 # Apply from the kernel source root:  patch -p1 < patches/init.c.patch
 # Rationale: docs/init.c.md
 # +3 / -3 lines

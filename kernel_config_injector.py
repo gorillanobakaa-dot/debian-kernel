@@ -80,7 +80,8 @@ MANDATORY_FLAGS = {
     "CONFIG_IOSCHED_BFQ": "y",
     "CONFIG_BFQ_GROUP_IOSCHED": "y",
     "CONFIG_MQ_IOSCHED_KYBER": "y",
-    "CONFIG_SCSI_MQ_DEFAULT": "y",
+    # CONFIG_SCSI_MQ_DEFAULT removed 2026-10-10 (7.2.9 migration): no Kconfig defines it in 7.1.2 or 7.2.9 (blk-mq is the
+    # only SCSI path since 5.0), so it never reached a build; olddefconfig drops it and the verify step failed on it.
     "CONFIG_SATA_AHCI": "y",
     "CONFIG_ATA_PIIX": "y",
     "CONFIG_BLK_DEV_SD": "y",

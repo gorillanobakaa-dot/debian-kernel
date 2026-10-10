@@ -1,11 +1,11 @@
 # Gorilla Unleashed -- net/ipv4/tcp.c
-# Baseline: pristine linux-7.1.2 (sha256 37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f)
+# Baseline: pristine linux-7.2.9 (sha256 )
 # Apply from the kernel source root:  patch -p1 < patches/tcp.c.patch
 # Rationale: docs/tcp.c.md
 # +7 / -8 lines
 --- a/net/ipv4/tcp.c
 +++ b/net/ipv4/tcp.c
-@@ -456,7 +456,7 @@
+@@ -455,7 +455,7 @@
  	 * initialization of these values.
  	 */
  	tp->snd_ssthresh = TCP_INFINITE_SSTHRESH;
@@ -14,7 +14,7 @@
  	tp->mss_cache = TCP_MSS_DEFAULT;
  
  	tp->reordering = READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_reordering);
-@@ -5367,13 +5367,12 @@
+@@ -5361,13 +5361,12 @@
  	max_wshare = min(4UL*1024*1024, limit);
  	max_rshare = min(32UL*1024*1024, limit);
  

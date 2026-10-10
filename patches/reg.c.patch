@@ -1,5 +1,5 @@
 # Gorilla Unleashed -- net/wireless/reg.c
-# Baseline: pristine linux-7.1.2 (sha256 37198c93727be247c9fb5309bb86cd5e496c61e5322cd8c4eca9476bb0b5883f)
+# Baseline: pristine linux-7.2.9 (sha256 )
 # Apply from the kernel source root:  patch -p1 < patches/reg.c.patch
 # Rationale: docs/reg.c.md
 # +87 / -55 lines
@@ -200,7 +200,7 @@
  		return false;
  	/* This would happen when regulatory rules disallow HT40 completely */
  	if ((chan->flags & IEEE80211_CHAN_NO_HT40) == IEEE80211_CHAN_NO_HT40)
-@@ -2431,7 +2444,7 @@
+@@ -2434,7 +2447,7 @@
  		case NL80211_IFTYPE_STATION:
  		case NL80211_IFTYPE_P2P_CLIENT:
  			ret = cfg80211_chandef_usable(wiphy, &chandef,
@@ -209,7 +209,7 @@
  			if (!ret)
  				return ret;
  			break;
-@@ -2548,9 +2561,9 @@
+@@ -2551,9 +2564,9 @@
  		pr_debug("Disabling freq %d.%03d MHz as custom regd has no rule that fits it\n",
  			 chan->center_freq, chan->freq_offset);
  		if (wiphy->regulatory_flags & REGULATORY_WIPHY_SELF_MANAGED) {
@@ -221,7 +221,7 @@
  			chan->flags = chan->orig_flags;
  		}
  		return;
-@@ -2574,7 +2587,7 @@
+@@ -2577,7 +2590,7 @@
  	chan->max_reg_power = chan->max_power =
  		(int) MBM_TO_DBM(power_rule->max_eirp);
  
@@ -230,7 +230,7 @@
  		if (reg_rule->dfs_cac_ms)
  			chan->dfs_cac_ms = reg_rule->dfs_cac_ms;
  		else
-@@ -2584,7 +2597,13 @@
+@@ -2587,7 +2600,13 @@
  	if (chan->flags & IEEE80211_CHAN_PSD)
  		chan->psd = reg_rule->psd;
  
@@ -245,7 +245,7 @@
  }
  
  static void handle_band_custom(struct wiphy *wiphy,
-@@ -2852,8 +2871,21 @@
+@@ -2855,8 +2874,21 @@
  			return REG_REQ_IGNORE;
  		return REG_REQ_ALREADY_SET;
  	} else {
@@ -269,7 +269,7 @@
  	}
  
  	if (unlikely(!is_an_alpha2(country_ie_request->alpha2)))
-@@ -2955,12 +2987,12 @@
+@@ -2958,12 +2990,12 @@
  static void reg_copy_dfs_chan_state(struct ieee80211_channel *dst_chan,
  				    struct ieee80211_channel *src_chan)
  {
@@ -286,7 +286,7 @@
  		return;
  
  	if (src_chan->center_freq == dst_chan->center_freq &&
-@@ -3656,7 +3688,7 @@
+@@ -3659,7 +3691,7 @@
  	bool processing;
  
  	if (beacon_chan->beacon_found ||
