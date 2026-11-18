@@ -66,7 +66,8 @@ jobs:
           python -m pip install -e ".fieldkit[test]"
           sudo apt-get update
           sudo apt-get install -y $(python -c "from fieldkit.build import kernel; print(' '.join(kernel.BUILD_DEPS))")
-          printf '{"kernel": {"workdir": "%s", "project": "%s"}}\n' "$KWORK" "$GITHUB_WORKSPACE" > .fieldkit/fieldkit.local.json
+          jq -n --arg workdir "$KWORK" --arg project "$GITHUB_WORKSPACE" --arg version "$KVER" \
+            '{kernel:{workdir:$workdir,project:$project,version:$version}}' > .fieldkit/fieldkit.local.json
           fieldkit doctor --for debian-kernel
 
       - name: The pipeline (kernel.org source checked against its sha256, patches, config, build, .deb and .rpm)
