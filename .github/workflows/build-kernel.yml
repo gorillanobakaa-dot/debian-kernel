@@ -5,7 +5,7 @@
 # written during the 7.2.9 migration: every step below is a Fieldkit command or the project's own script, so the
 # runner does exactly what the pipeline does on the maintainer's machine.
 #
-# pull_request: build and check only. push to main / Run workflow: also publish a pre-release and prove it.
+# Tests build the package set. A dispatch on an existing version tag additionally records installer and boot evidence.
 name: Gorilla Unleashed kernel (built and checked by Gorilla Fieldkit)
 
 on:
@@ -16,16 +16,15 @@ on:
     inputs:
       kernel_version:
         description: "Kernel version to build"
-        required: false
-        default: "7.2.9"
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
 
 env:
-  KVER: ${{ github.event.inputs.kernel_version || '7.2.9' }}
-  # the Fieldkit branch or tag to run
-  FIELDKIT_REF: main
+  INPUT_VERSION: ${{ inputs.kernel_version }}
+  FIELDKIT_REF: 4c8326faf715d286e276aed79befbc83681d4180
   KWORK: ${{ github.workspace }}/../kernel-work
 
 jobs:
@@ -37,6 +36,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
+
+      - name: Select the documented kernel version
+        run: |
+          ver="$INPUT_VERSION"
+          if [[ -z "$ver" ]]; then
+            ver=$(find docs -maxdepth 1 -type d -name 'release-*' -printf '%f\n' | sed 's/^release-//' | sort -V | tail -n 1)
+          fi
+          [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then test "$GITHUB_REF_NAME" = "v$ver"; fi
+          printf 'KVER=%s\n' "$ver" >> "$GITHUB_ENV"
 
       - name: Gorilla Fieldkit
         uses: actions/checkout@v4
@@ -44,6 +54,7 @@ jobs:
           repository: gorillanobakaa-dot/Gorilla.Fieldkit
           ref: ${{ env.FIELDKIT_REF }}
           path: .fieldkit
+          persist-credentials: false
 
       - uses: actions/setup-python@v5
         with:
@@ -66,46 +77,104 @@ jobs:
       - name: The project's own proof against the official tarball
         run: TARBALL_PATH="$KWORK/linux-$KVER.tar.xz" ./verify_patches.sh
 
-      - name: The release page, with the checksums of the packages this run built
+      - name: The release page and candidate assets
         run: |
           OUT="$KWORK/debs-$KVER"
-          cd "$OUT"
-          rm -f linux-libc-dev_*.deb kernel-headers-*.rpm      # system headers: never to be installed from here
-          sha256sum *.deb *.rpm > SHA256SUMS
-          cd "$GITHUB_WORKSPACE"
-          { echo "## Package checksums"; echo; echo "Built by this run from kernel.org's linux-$KVER.tar.xz."; echo;
-            echo '```'; cat "$OUT/SHA256SUMS"; echo '```'; } > "$RUNNER_TEMP/checksums.md"
+          CANDIDATE="$RUNNER_TEMP/candidate"
+          mkdir "$CANDIDATE" "$CANDIDATE/assets"
+          cp "$OUT"/linux-image-*.deb "$OUT"/linux-headers-*.deb "$OUT"/kernel-[0-9]*.rpm "$OUT"/kernel-devel-*.rpm "$CANDIDATE/assets/"
+          (cd "$CANDIDATE/assets" && sha256sum *.deb *.rpm > SHA256SUMS)
+          python3 - "$CANDIDATE/assets" > "$RUNNER_TEMP/checksums.md" <<'PY'
+          from pathlib import Path
+          import sys
+          from fieldkit.method.releasecandidate import file_digest
+
+          print('## Release files\n\n| File | Bytes | SHA-256 |\n|---|---|---|')
+          for path in sorted(Path(sys.argv[1]).iterdir()):
+              print(f'| `{path.name}` | {path.stat().st_size:,} | `{file_digest(path)}` |')
+          PY
           D="docs/release-$KVER"
           fieldkit release-page compose --opening "$D/opening.md" --layman "$D/layman.md" \
-            --developer "$D/developer.md" --extra "$RUNNER_TEMP/checksums.md" --out "$RUNNER_TEMP/release-page.md"
-          fieldkit release-page check "$RUNNER_TEMP/release-page.md" --layman "$D/layman.md" --developer "$D/developer.md"
+            --developer "$D/developer.md" --extra "$RUNNER_TEMP/checksums.md" --out "$CANDIDATE/page.md"
+          fieldkit release-page check "$CANDIDATE/page.md" --layman "$D/layman.md" --developer "$D/developer.md"
           fieldkit docs release --manifest "$D/release-docs.yaml"
+          files=$(find "$CANDIDATE/assets" -maxdepth 1 -type f -printf '%f\n' | sort | jq -R . | jq -s .)
+          jq -n --arg version "$KVER" --arg title "Linux $KVER Unleashed" --argjson run "$GITHUB_RUN_ID" --argjson assets "$files" \
+            '{version:$version,title:$title,notes:"page.md",assets:$assets,runs:{"debian-x86_64":$run,"rpm-x86_64":$run}}' \
+            > "$CANDIDATE/candidate.json"
 
       - name: Before publishing - privacy of the tree and the project's tests (stops the publish step)
         run: |
           export KOUT="$KWORK/debs-$KVER" TARBALL_PATH="$KWORK/linux-$KVER.tar.xz"
           fieldkit release check .fieldkit/releases/debian-kernel.yaml --before-publish
 
-      - name: Publish a pre-release (not boot-tested)
-        if: github.event_name != 'pull_request'
-        uses: softprops/action-gh-release@v2
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: github.event_name == 'workflow_dispatch' && github.ref_type == 'tag'
         with:
-          tag_name: "v${{ env.KVER }}-unleashed-${{ github.run_number }}"
-          target_commitish: ${{ github.sha }}
-          name: "Linux ${{ env.KVER }} Unleashed, build ${{ github.run_number }} (pre-release: not yet boot-tested)"
-          body_path: ${{ runner.temp }}/release-page.md
-          prerelease: true
-          files: |
-            ${{ env.KWORK }}/debs-${{ env.KVER }}/*.deb
-            ${{ env.KWORK }}/debs-${{ env.KVER }}/*.rpm
-            ${{ env.KWORK }}/debs-${{ env.KVER }}/SHA256SUMS
+          name: candidate-build
+          path: ${{ runner.temp }}/candidate/
+          if-no-files-found: error
 
-      - name: The release gate (published == tested, privacy, the project's tests on the tag)
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: "v${{ env.KVER }}-unleashed-${{ github.run_number }}"
+  install-and-boot:
+    if: github.event_name == 'workflow_dispatch' && github.ref_type == 'tag'
+    needs: kernel
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      matrix:
+        include:
+          - {target: debian-x86_64, image: 'debian:stable'}
+          - {target: rpm-x86_64, image: 'fedora:latest'}
+    container: ${{ matrix.image }}
+    env:
+      TARGET: ${{ matrix.target }}
+    steps:
+      - name: Native installer and disposable VM tools
+        shell: bash
         run: |
-          git fetch --tags --force
-          export KOUT="$KWORK/debs-$KVER" TARBALL_PATH="$KWORK/linux-$KVER.tar.xz"
-          fieldkit release check .fieldkit/releases/debian-kernel.yaml
+          if [[ "$TARGET" == debian-x86_64 ]]; then
+            apt-get update
+            apt-get install -y ca-certificates git python3 python3-yaml gcc libc6-dev cpio qemu-system-x86 kmod
+          else
+            dnf install -y git python3 python3-pyyaml gcc glibc-static cpio qemu-system-x86-core kmod
+          fi
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: gorillanobakaa-dot/Gorilla.Fieldkit
+          ref: ${{ env.FIELDKIT_REF }}
+          path: .fieldkit
+          persist-credentials: false
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: candidate-build
+          path: candidate
+      - name: Install the exact package and boot its installed image
+        shell: bash
+        run: |
+          PYTHONPATH="$PWD/.fieldkit" python3 -m fieldkit.method.installproof --target "$TARGET" --version "$INPUT_VERSION" \
+            --directory candidate/assets --cover-directory --output proof/proof.json -- bash .github/verify-candidate-install.sh "$TARGET"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: install-proof-${{ matrix.target }}
+          path: proof/proof.json
+          if-no-files-found: error
+
+  collect:
+    needs: install-and-boot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: candidate-build
+          path: build
+      - run: |
+          mkdir candidate
+          cp build/candidate.json build/page.md build/assets/* candidate/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-candidate
+          path: candidate/
+          if-no-files-found: error

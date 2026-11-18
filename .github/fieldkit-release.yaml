@@ -1,0 +1,13 @@
+schema: 1
+distribution: installers
+targets:
+  debian-x86_64:
+    platform: debian
+    arch: x86_64
+    installer: 'linux-image-{version}-unleashed[^_]*_{version}_amd64\.deb'
+    workflow: .github/workflows/build-kernel.yml
+  rpm-x86_64:
+    platform: linux
+    arch: x86_64
+    installer: 'kernel-{version}_unleashed.*-[0-9]+\.x86_64\.rpm'
+    workflow: .github/workflows/build-kernel.yml
